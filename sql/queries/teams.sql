@@ -1,15 +1,15 @@
 -- name: CreateTeam :one
-INSERT INTO teams (name, owner_id)
-VALUES ($1, $2)
+INSERT INTO teams (name, goal, level, start_date, end_date, created_by)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
 -- name: GetTeamByID :one
 SELECT * FROM teams
 WHERE id = $1;
 
--- name: ListTeamsByOwner :many
+-- name: ListTeamsByCreatedBy :many
 SELECT * FROM teams
-WHERE owner_id = $1;
+WHERE created_by = $1;
 
 -- name: UpdateTeam :one
 UPDATE teams

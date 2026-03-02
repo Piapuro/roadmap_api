@@ -3,6 +3,7 @@ module github.com/your-name/roadmap/api
 go 1.24.0
 
 require (
+	github.com/google/uuid v1.6.0
 	github.com/labstack/echo/v4 v4.15.1
 	github.com/lib/pq v1.11.2
 	google.golang.org/genai v1.48.0
