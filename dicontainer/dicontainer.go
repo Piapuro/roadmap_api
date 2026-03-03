@@ -10,6 +10,8 @@ import (
 	"github.com/your-name/roadmap/api/query"
 	"github.com/your-name/roadmap/api/router"
 	"github.com/your-name/roadmap/api/service"
+	apperrors "github.com/your-name/roadmap/api/utils/errors"
+	"go.uber.org/zap"
 )
 
 type Container struct {
@@ -51,8 +53,12 @@ func New() (*Container, error) {
 	// Middleware
 	auth := middleware.NewSupabaseAuth(supabaseCfg.JWTSecret)
 
+	// Logger
+	logger, _ := zap.NewProduction()
+
 	// Echo
 	e := echo.New()
+	e.HTTPErrorHandler = apperrors.NewGlobalErrorHandler(logger)
 	e.Use(echoMiddleware.Logger())
 	e.Use(echoMiddleware.Recover())
 
