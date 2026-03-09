@@ -1,6 +1,8 @@
 package dicontainer
 
 import (
+	"go.uber.org/zap"
+
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/your-name/roadmap/api/adapter"
@@ -17,6 +19,13 @@ type Container struct {
 }
 
 func New() (*Container, error) {
+	// Logger
+	logger, err := zap.NewProduction()
+	if err != nil {
+		return nil, err
+	}
+	defer logger.Sync()
+
 	// DB
 	db, err := driver.NewPostgresDB()
 	if err != nil {
