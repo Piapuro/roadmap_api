@@ -12,10 +12,11 @@ const ContextKeyUserID = "user_id"
 
 type SupabaseAuth struct {
 	jwtSecret []byte
+	issuer    string
 }
 
-func NewSupabaseAuth(jwtSecret string) *SupabaseAuth {
-	return &SupabaseAuth{jwtSecret: []byte(jwtSecret)}
+func NewSupabaseAuth(jwtSecret string, issuer string) *SupabaseAuth {
+	return &SupabaseAuth{jwtSecret: []byte(jwtSecret), issuer: issuer}
 }
 
 type supabaseClaims struct {
@@ -38,8 +39,12 @@ func (m *SupabaseAuth) Verify(next echo.HandlerFunc) echo.HandlerFunc {
 				return nil, echo.ErrUnauthorized
 			}
 			return m.jwtSecret, nil
-		})
+		}, jwt.WithExpirationRequired())
 		if err != nil || !token.Valid {
+			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid token"})
+		}
+
+		if m.issuer != "" && claims.Issuer != m.issuer {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid token"})
 		}
 

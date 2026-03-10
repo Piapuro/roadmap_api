@@ -48,7 +48,7 @@ INSERT INTO global_roles (id, name, level) VALUES
 ON CONFLICT DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS user_global_roles (
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
     global_role_id SMALLINT NOT NULL REFERENCES global_roles(id),
     granted_at TIMESTAMP NOT NULL DEFAULT NOW(),
     PRIMARY KEY (user_id, global_role_id)

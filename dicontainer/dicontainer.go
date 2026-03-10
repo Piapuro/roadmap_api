@@ -1,8 +1,6 @@
 package dicontainer
 
 import (
-	"go.uber.org/zap"
-
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/your-name/roadmap/api/adapter"
@@ -26,7 +24,6 @@ func New() (*Container, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer logger.Sync()
 
 	// DB
 	db, err := driver.NewPostgresDB()
@@ -35,7 +32,10 @@ func New() (*Container, error) {
 	}
 
 	// Supabase config
-	supabaseCfg := driver.NewSupabaseConfig()
+	supabaseCfg, err := driver.NewSupabaseConfig()
+	if err != nil {
+		return nil, err
+	}
 
 	// sqlc queries
 	q := query.New(db)
@@ -60,10 +60,7 @@ func New() (*Container, error) {
 	roadmapController := controller.NewRoadmapController(roadmapService)
 
 	// Middleware
-	auth := middleware.NewSupabaseAuth(supabaseCfg.JWTSecret)
-
-	// Logger
-	logger, _ := zap.NewProduction()
+	auth := middleware.NewSupabaseAuth(supabaseCfg.JWTSecret, supabaseCfg.URL+"/auth/v1")
 
 	// Echo
 	e := echo.New()

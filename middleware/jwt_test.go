@@ -13,18 +13,22 @@ import (
 
 const testSecret = "test-secret-key"
 
-func makeToken(secret string, sub string, exp time.Time) string {
+func makeToken(t testing.TB, secret string, sub string, exp time.Time) string {
+	t.Helper()
 	claims := jwt.RegisteredClaims{
 		Subject:   sub,
 		ExpiresAt: jwt.NewNumericDate(exp),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signed, _ := token.SignedString([]byte(secret))
+	signed, err := token.SignedString([]byte(secret))
+	if err != nil {
+		t.Fatal(err)
+	}
 	return signed
 }
 
 func TestVerify(t *testing.T) {
-	auth := middleware.NewSupabaseAuth(testSecret)
+	auth := middleware.NewSupabaseAuth(testSecret, "")
 	handler := auth.Verify(func(c echo.Context) error {
 		return c.JSON(http.StatusOK, nil)
 	})
@@ -36,7 +40,7 @@ func TestVerify(t *testing.T) {
 	}{
 		{
 			name:       "正常なJWT",
-			authHeader: "Bearer " + makeToken(testSecret, "user-uuid", time.Now().Add(time.Hour)),
+			authHeader: "Bearer " + makeToken(t, testSecret, "user-uuid", time.Now().Add(time.Hour)),
 			wantStatus: http.StatusOK,
 		},
 		{
@@ -46,12 +50,12 @@ func TestVerify(t *testing.T) {
 		},
 		{
 			name:       "不正なJWT（署名が違う）",
-			authHeader: "Bearer " + makeToken("wrong-secret", "user-uuid", time.Now().Add(time.Hour)),
+			authHeader: "Bearer " + makeToken(t, "wrong-secret", "user-uuid", time.Now().Add(time.Hour)),
 			wantStatus: http.StatusUnauthorized,
 		},
 		{
 			name:       "期限切れJWT",
-			authHeader: "Bearer " + makeToken(testSecret, "user-uuid", time.Now().Add(-time.Hour)),
+			authHeader: "Bearer " + makeToken(t, testSecret, "user-uuid", time.Now().Add(-time.Hour)),
 			wantStatus: http.StatusUnauthorized,
 		},
 	}
