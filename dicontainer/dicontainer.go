@@ -6,14 +6,14 @@ import (
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
-	"github.com/your-name/roadmap/api/adapter"
-	"github.com/your-name/roadmap/api/controller"
-	"github.com/your-name/roadmap/api/driver"
-	"github.com/your-name/roadmap/api/middleware"
-	"github.com/your-name/roadmap/api/query"
-	"github.com/your-name/roadmap/api/router"
-	"github.com/your-name/roadmap/api/service"
-	apperrors "github.com/your-name/roadmap/api/utils/errors"
+	"github.com/Piapuro/roadmap_api/adapter"
+	"github.com/Piapuro/roadmap_api/controller"
+	"github.com/Piapuro/roadmap_api/driver"
+	"github.com/Piapuro/roadmap_api/middleware"
+	"github.com/Piapuro/roadmap_api/query"
+	"github.com/Piapuro/roadmap_api/router"
+	"github.com/Piapuro/roadmap_api/service"
+	apperrors "github.com/Piapuro/roadmap_api/utils/errors"
 	"go.uber.org/zap"
 )
 
@@ -47,6 +47,7 @@ func New() (*Container, error) {
 	userAdapter := adapter.NewUserAdapter(q)
 	teamAdapter := adapter.NewTeamAdapter(q)
 	requirementAdapter := adapter.NewRequirementAdapter(q)
+	webhookAdapter := adapter.NewWebhookAdapter(db)
 	aiAdapter := adapter.NewAIAdapter()
 
 	// Services
@@ -64,6 +65,7 @@ func New() (*Container, error) {
 	teamController := controller.NewTeamController(teamService)
 	requirementController := controller.NewRequirementController(requirementService)
 	roadmapController := controller.NewRoadmapController(roadmapService)
+	webhookController := controller.NewWebhookController(webhookAdapter, os.Getenv("WEBHOOK_SECRET"))
 
 	// Middleware
 	auth := middleware.NewSupabaseAuth(supabaseCfg.JWTSecret, supabaseCfg.URL+"/auth/v1")
@@ -90,6 +92,7 @@ func New() (*Container, error) {
 	router.RegisterTeamRoutes(e, teamController, auth)
 	router.RegisterRequirementRoutes(e, requirementController, auth)
 	router.RegisterRoadmapRoutes(e, roadmapController, auth)
+	router.RegisterWebhookRoutes(e, webhookController)
 
 	return &Container{echo: e}, nil
 }
