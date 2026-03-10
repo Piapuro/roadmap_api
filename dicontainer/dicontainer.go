@@ -65,7 +65,7 @@ func New() (*Container, error) {
 	// Echo
 	e := echo.New()
 	e.HTTPErrorHandler = apperrors.NewGlobalErrorHandler(logger)
-	e.Use(echoMiddleware.Logger())
+	e.Use(echoMiddleware.RequestLogger())
 	e.Use(echoMiddleware.Recover())
 
 	// Health check
