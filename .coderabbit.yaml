@@ -1,0 +1,71 @@
+# CodeRabbit 設定ファイル
+# https://docs.coderabbit.ai/getting-started/configure-coderabbit
+
+language: ja-JP
+
+reviews:
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: true
+  review_status: true
+  collapse_walkthrough: false
+
+  # 自動レビューの設定
+  auto_review:
+    enabled: true
+    base_branches:
+      - main
+
+  # レビューから除外するパス
+  path_filters:
+    - "!query/*.sql.go"        # sqlc 自動生成ファイル
+    - "!**/vendor/**"
+    - "!go.sum"
+
+  # パスごとのレビュー観点
+  path_instructions:
+    - path: "**/*.go"
+      instructions: |
+        - `gofmt` / `go vet` の規約に準拠しているか確認する
+        - エラーを握りつぶしていないか（`_ = err` 等）
+        - `context.Context` が適切に伝播されているか
+        - goroutine リークの可能性がないか
+
+    - path: "service/**/*.go"
+      instructions: |
+        - ビジネスロジックのみを含み、HTTP の関心事（echo.Context 等）が混入していないか
+        - 依存はインターフェース経由になっているか
+
+    - path: "controller/**/*.go"
+      instructions: |
+        - リクエストのバリデーションが適切か
+        - レスポンスの形式が他のコントローラーと統一されているか
+        - エラー時に適切な HTTP ステータスコードを返しているか（`utils/errors` を利用しているか）
+
+    - path: "middleware/**/*.go"
+      instructions: |
+        - JWT の検証ロジックに抜け穴がないか（署名アルゴリズムの固定、有効期限チェック等）
+        - RBAC/ABAC の認可ロジックが意図通りか
+        - セキュリティ上の問題がないか
+
+    - path: "adapter/**/*.go"
+      instructions: |
+        - sqlc を使っているため基本は安全だが、動的クエリを組み立てている箇所は SQL インジェクションに注意
+        - ドメインモデルへのマッピングが正確か、フィールドの取り違えがないか
+
+    - path: "router/**/*.go"
+      instructions: |
+        - 認証ミドルウェアが必要なルートに漏れなく適用されているか
+        - ルートのグループ化・命名規則が他のルーターと統一されているか
+
+  finishing_touches:
+    docstrings:
+      enabled: false
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  learnings:
+    scope: auto
+  opt_out: false

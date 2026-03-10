@@ -23,6 +23,18 @@ CREATE TABLE IF NOT EXISTS user_skills (
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+-- Supabase auth.users.id をそのまま PK として使用するプロフィールテーブル
+CREATE TABLE IF NOT EXISTS user_profiles (
+    id UUID PRIMARY KEY,
+    name VARCHAR(20) NOT NULL,
+    avatar_url VARCHAR(500),
+    bio VARCHAR(200),
+    skill_level VARCHAR(20) NOT NULL DEFAULT 'beginner'
+        CHECK (skill_level IN ('beginner', 'intermediate', 'advanced')),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS global_roles (
     id SMALLINT PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL,
@@ -36,7 +48,7 @@ INSERT INTO global_roles (id, name, level) VALUES
 ON CONFLICT DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS user_global_roles (
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
     global_role_id SMALLINT NOT NULL REFERENCES global_roles(id),
     granted_at TIMESTAMP NOT NULL DEFAULT NOW(),
     PRIMARY KEY (user_id, global_role_id)

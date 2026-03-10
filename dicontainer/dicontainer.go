@@ -19,6 +19,12 @@ type Container struct {
 }
 
 func New() (*Container, error) {
+	// Logger
+	logger, err := zap.NewProduction()
+	if err != nil {
+		return nil, err
+	}
+
 	// DB
 	db, err := driver.NewPostgresDB()
 	if err != nil {
@@ -26,7 +32,10 @@ func New() (*Container, error) {
 	}
 
 	// Supabase config
-	supabaseCfg := driver.NewSupabaseConfig()
+	supabaseCfg, err := driver.NewSupabaseConfig()
+	if err != nil {
+		return nil, err
+	}
 
 	// sqlc queries
 	q := query.New(db)
@@ -51,15 +60,12 @@ func New() (*Container, error) {
 	roadmapController := controller.NewRoadmapController(roadmapService)
 
 	// Middleware
-	auth := middleware.NewSupabaseAuth(supabaseCfg.JWTSecret)
-
-	// Logger
-	logger, _ := zap.NewProduction()
+	auth := middleware.NewSupabaseAuth(supabaseCfg.JWTSecret, supabaseCfg.URL+"/auth/v1")
 
 	// Echo
 	e := echo.New()
 	e.HTTPErrorHandler = apperrors.NewGlobalErrorHandler(logger)
-	e.Use(echoMiddleware.Logger())
+	e.Use(echoMiddleware.RequestLogger())
 	e.Use(echoMiddleware.Recover())
 
 	// Health check

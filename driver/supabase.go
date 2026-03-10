@@ -1,6 +1,9 @@
 package driver
 
-import "os"
+import (
+	"fmt"
+	"os"
+)
 
 type SupabaseConfig struct {
 	URL       string
@@ -8,10 +11,14 @@ type SupabaseConfig struct {
 	JWTSecret string
 }
 
-func NewSupabaseConfig() *SupabaseConfig {
+func NewSupabaseConfig() (*SupabaseConfig, error) {
+	secret := os.Getenv("SUPABASE_JWT_SECRET")
+	if secret == "" {
+		return nil, fmt.Errorf("SUPABASE_JWT_SECRET is not set")
+	}
 	return &SupabaseConfig{
 		URL:       os.Getenv("SUPABASE_URL"),
 		AnonKey:   os.Getenv("SUPABASE_ANON_KEY"),
-		JWTSecret: os.Getenv("SUPABASE_JWT_SECRET"),
-	}
+		JWTSecret: secret,
+	}, nil
 }

@@ -7,11 +7,9 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-
-# CGO無効・最適化フラグ付きでビルド
 RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags='-w -s' \
-    -o /app/api main.go
+    -o api main.go
 
 # Stage 2: 実行（最小・安全なイメージ）
 FROM gcr.io/distroless/static-debian12

@@ -7,17 +7,13 @@ import (
 )
 
 // RBAC checks whether the authenticated user has one of the required roles.
-// TODO: implement after 3/7
+// TODO: implement - role extraction from context and validation against requiredRoles
 func RBAC(requiredRoles ...string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			// TODO: extract role from context set by SupabaseAuth middleware
-			// TODO: check against requiredRoles
+			// Fail-closed until implementation is complete.
 			_ = requiredRoles
-			if false {
-				return c.JSON(http.StatusForbidden, map[string]string{"error": "forbidden"})
-			}
-			return next(c)
+			return c.JSON(http.StatusForbidden, map[string]string{"error": "forbidden"})
 		}
 	}
 }
