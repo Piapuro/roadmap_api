@@ -1,6 +1,8 @@
 package dicontainer
 
 import (
+	"os"
+
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
@@ -44,12 +46,14 @@ func New() (*Container, error) {
 	// Adapters
 	userAdapter := adapter.NewUserAdapter(q)
 	teamAdapter := adapter.NewTeamAdapter(q)
+	requirementAdapter := adapter.NewRequirementAdapter(q)
 	aiAdapter := adapter.NewAIAdapter()
 
 	// Services
 	authService := service.NewAuthService()
 	userService := service.NewUserService(userAdapter)
 	teamService := service.NewTeamService(teamAdapter)
+	requirementService := service.NewRequirementService(requirementAdapter)
 	aiService := service.NewAIService(aiAdapter)
 	roadmapService := service.NewRoadmapService(aiAdapter)
 	_ = aiService
@@ -58,6 +62,7 @@ func New() (*Container, error) {
 	authController := controller.NewAuthController(authService)
 	userController := controller.NewUserController(userService)
 	teamController := controller.NewTeamController(teamService)
+	requirementController := controller.NewRequirementController(requirementService)
 	roadmapController := controller.NewRoadmapController(roadmapService)
 
 	// Middleware
@@ -74,13 +79,16 @@ func New() (*Container, error) {
 		return c.JSON(200, map[string]string{"status": "ok"})
 	})
 
-	// Swagger UI
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
+	// Swagger UI（本番環境では無効化）
+	if os.Getenv("APP_ENV") != "production" {
+		e.GET("/swagger/*", echoSwagger.WrapHandler)
+	}
 
 	// Routes
 	router.RegisterAuthRoutes(e, authController)
 	router.RegisterUserRoutes(e, userController, auth)
 	router.RegisterTeamRoutes(e, teamController, auth)
+	router.RegisterRequirementRoutes(e, requirementController, auth)
 	router.RegisterRoadmapRoutes(e, roadmapController, auth)
 
 	return &Container{echo: e}, nil

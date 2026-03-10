@@ -26,6 +26,7 @@ func NewRequirementController(requirementService *service.RequirementService) *R
 // @Success      201   {object}  response.RequirementResponse
 // @Failure      400   {object}  map[string]string
 // @Failure      401   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /requirements [post]
 func (c *RequirementController) CreateRequirement(ctx echo.Context) error {
@@ -46,6 +47,7 @@ func (c *RequirementController) CreateRequirement(ctx echo.Context) error {
 // @Success      200  {object}  response.RequirementResponse
 // @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /requirements/{id} [get]
 func (c *RequirementController) GetRequirement(ctx echo.Context) error {
@@ -65,6 +67,7 @@ func (c *RequirementController) GetRequirement(ctx echo.Context) error {
 // @Failure      400   {object}  map[string]string
 // @Failure      401   {object}  map[string]string
 // @Failure      404   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /requirements/{id} [put]
 func (c *RequirementController) UpdateRequirement(ctx echo.Context) error {
@@ -86,6 +89,7 @@ func (c *RequirementController) UpdateRequirement(ctx echo.Context) error {
 // @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
 // @Failure      409  {object}  map[string]string  "すでに提出済みの場合"
+// @Failure      500  {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /requirements/{id}/submit [post]
 func (c *RequirementController) SubmitRequirement(ctx echo.Context) error {

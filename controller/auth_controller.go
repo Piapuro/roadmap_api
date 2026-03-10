@@ -25,6 +25,8 @@ func NewAuthController(authService *service.AuthService) *AuthController {
 // @Param        body  body      requests.SignUpRequest  true  "登録情報"
 // @Success      201   {object}  map[string]string
 // @Failure      400   {object}  map[string]string
+// @Failure      409   {object}  map[string]string  "メールアドレスが既に登録済み"
+// @Failure      500   {object}  map[string]string
 // @Router       /auth/signup [post]
 func (c *AuthController) SignUp(ctx echo.Context) error {
 	var req requests.SignUpRequest
@@ -45,6 +47,7 @@ func (c *AuthController) SignUp(ctx echo.Context) error {
 // @Success      200   {object}  map[string]string
 // @Failure      400   {object}  map[string]string
 // @Failure      401   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
 // @Router       /auth/login [post]
 func (c *AuthController) Login(ctx echo.Context) error {
 	var req requests.LoginRequest
@@ -62,6 +65,7 @@ func (c *AuthController) Login(ctx echo.Context) error {
 // @Produce      json
 // @Success      200  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /auth/logout [post]
 func (c *AuthController) Logout(ctx echo.Context) error {
