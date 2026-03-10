@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/your-name/roadmap/api/dicontainer"
+	"github.com/Piapuro/roadmap_api/dicontainer"
 )
 
 func main() {

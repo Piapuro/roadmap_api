@@ -1,8 +1,6 @@
 package middleware
 
 import (
-	"net/http"
-
 	"github.com/labstack/echo/v4"
 )
 
@@ -11,12 +9,9 @@ import (
 func RBAC(requiredRoles ...string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			// TODO: extract role from context set by SupabaseAuth middleware
-			// TODO: check against requiredRoles
+			// NOTE: RBAC is not yet implemented. All requests pass through.
+			// TODO: implement after JWT auth is ready (#007)
 			_ = requiredRoles
-			if false {
-				return c.JSON(http.StatusForbidden, map[string]string{"error": "forbidden"})
-			}
 			return next(c)
 		}
 	}

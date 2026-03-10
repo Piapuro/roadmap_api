@@ -1,6 +1,6 @@
 package service
 
-import "github.com/your-name/roadmap/api/adapter"
+import "github.com/Piapuro/roadmap_api/adapter"
 
 // AIService handles business logic for AI-related features using Gemini.
 type AIService struct {
