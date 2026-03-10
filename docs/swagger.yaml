@@ -1,0 +1,958 @@
+basePath: /
+definitions:
+  requests.CreateRequirementRequest:
+    properties:
+      difficulty_level:
+        example: 2
+        maximum: 5
+        minimum: 1
+        type: integer
+      features:
+        example:
+        - ログイン機能
+        - 商品一覧
+        - カート機能
+        items:
+          type: string
+        type: array
+      free_text:
+        example: ECサイトを作りたい
+        type: string
+      product_type:
+        example: web
+        type: string
+      supplement_url:
+        example: https://example.com/spec
+        type: string
+      team_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - difficulty_level
+    - product_type
+    - team_id
+    type: object
+  requests.CreateRoadmapRequest:
+    properties:
+      team_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      title:
+        example: ECサイト開発ロードマップ
+        type: string
+    required:
+    - title
+    type: object
+  requests.CreateTeamRequest:
+    properties:
+      name:
+        example: Aチーム
+        type: string
+    required:
+    - name
+    type: object
+  requests.LoginRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: password123
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  requests.SignUpRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      name:
+        example: 山田太郎
+        type: string
+      password:
+        example: password123
+        minLength: 8
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  requests.UpdateRequirementRequest:
+    properties:
+      difficulty_level:
+        example: 3
+        maximum: 5
+        minimum: 1
+        type: integer
+      features:
+        example:
+        - プッシュ通知
+        - オフライン対応
+        items:
+          type: string
+        type: array
+      free_text:
+        example: モバイルアプリに変更
+        type: string
+      product_type:
+        example: app
+        type: string
+      supplement_url:
+        example: https://example.com/spec-v2
+        type: string
+    type: object
+  requests.UpdateRoadmapRequest:
+    properties:
+      content: {}
+      title:
+        example: ECサイト開発ロードマップ v2
+        type: string
+    required:
+    - title
+    type: object
+  requests.UpdateTeamRequest:
+    properties:
+      name:
+        example: Bチーム
+        type: string
+    required:
+    - name
+    type: object
+  requests.UpdateUserRequest:
+    properties:
+      name:
+        example: 山田花子
+        type: string
+    required:
+    - name
+    type: object
+  response.RequirementResponse:
+    properties:
+      created_at:
+        type: string
+      difficulty_level:
+        type: integer
+      features:
+        items:
+          type: string
+        type: array
+      free_text:
+        type: string
+      id:
+        type: string
+      product_type:
+        type: string
+      status:
+        type: string
+      supplement_url:
+        type: string
+      team_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  response.RoadmapResponse:
+    properties:
+      confirmed_at:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      requirement_id:
+        type: string
+      status:
+        type: string
+      team_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  response.TeamResponse:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  response.UserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: チーム開発ロードマップ生成API
+  title: Roadmap API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: メールアドレスとパスワードで認証し、JWTトークンを取得します
+      parameters:
+      - description: ログイン情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/requests.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ログイン
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      description: 現在のセッションを無効化します
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: ログアウト
+      tags:
+      - auth
+  /auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: メールアドレスとパスワードで新規ユーザーを登録します
+      parameters:
+      - description: 登録情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SignUpRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: メールアドレスが既に登録済み
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ユーザー登録
+      tags:
+      - auth
+  /requirements:
+    post:
+      consumes:
+      - application/json
+      description: 新しい要件定義を作成します
+      parameters:
+      - description: 要件定義情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/requests.CreateRequirementRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.RequirementResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 要件定義作成
+      tags:
+      - requirements
+  /requirements/{id}:
+    get:
+      description: 指定IDの要件定義を返します
+      parameters:
+      - description: 要件定義ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.RequirementResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 要件定義取得
+      tags:
+      - requirements
+    put:
+      consumes:
+      - application/json
+      description: 指定IDの要件定義を更新します
+      parameters:
+      - description: 要件定義ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 更新情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/requests.UpdateRequirementRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.RequirementResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 要件定義更新
+      tags:
+      - requirements
+  /requirements/{id}/submit:
+    post:
+      description: 要件定義のステータスを draft から submitted へ遷移させます
+      parameters:
+      - description: 要件定義ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.RequirementResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: すでに提出済みの場合
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 要件定義を提出
+      tags:
+      - requirements
+  /roadmaps:
+    get:
+      description: ログインユーザーが閲覧可能なロードマップ一覧を返します
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/response.RoadmapResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: ロードマップ一覧取得
+      tags:
+      - roadmaps
+    post:
+      consumes:
+      - application/json
+      description: 新しいロードマップを作成します
+      parameters:
+      - description: ロードマップ情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/requests.CreateRoadmapRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.RoadmapResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: ロードマップ作成
+      tags:
+      - roadmaps
+  /roadmaps/{id}:
+    delete:
+      description: 指定IDのロードマップを削除します
+      parameters:
+      - description: ロードマップID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: ロードマップ削除
+      tags:
+      - roadmaps
+    get:
+      description: 指定IDのロードマップを返します
+      parameters:
+      - description: ロードマップID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.RoadmapResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: ロードマップ取得
+      tags:
+      - roadmaps
+    put:
+      consumes:
+      - application/json
+      description: 指定IDのロードマップを更新します
+      parameters:
+      - description: ロードマップID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 更新情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/requests.UpdateRoadmapRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.RoadmapResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: ロードマップ更新
+      tags:
+      - roadmaps
+  /teams:
+    get:
+      description: ログインユーザーが所属するチームの一覧を返します
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/response.TeamResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: チーム一覧取得
+      tags:
+      - teams
+    post:
+      consumes:
+      - application/json
+      description: 新しいチームを作成します
+      parameters:
+      - description: チーム情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/requests.CreateTeamRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.TeamResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: チーム作成
+      tags:
+      - teams
+  /teams/{id}:
+    delete:
+      description: 指定IDのチームを削除します
+      parameters:
+      - description: チームID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: チーム削除
+      tags:
+      - teams
+    get:
+      description: 指定IDのチーム情報を返します
+      parameters:
+      - description: チームID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.TeamResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: チーム取得
+      tags:
+      - teams
+    put:
+      consumes:
+      - application/json
+      description: 指定IDのチーム情報を更新します
+      parameters:
+      - description: チームID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 更新情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/requests.UpdateTeamRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.TeamResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: チーム更新
+      tags:
+      - teams
+  /users/me:
+    get:
+      description: ログイン中のユーザー情報を返します
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 自分のプロフィール取得
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: ログイン中のユーザー情報を更新します
+      parameters:
+      - description: 更新情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/requests.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 自分のプロフィール更新
+      tags:
+      - users
+securityDefinitions:
+  BearerAuth:
+    description: '"Bearer {Supabase JWT token}" の形式で入力してください'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
