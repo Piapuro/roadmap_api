@@ -9,15 +9,23 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+const ContextKeyUserID = "user_id"
+
 type SupabaseAuth struct {
-	jwtSecret string
+	jwtSecret []byte
+	issuer    string
 }
 
-func NewSupabaseAuth(jwtSecret string) *SupabaseAuth {
-	return &SupabaseAuth{jwtSecret: jwtSecret}
+func NewSupabaseAuth(jwtSecret string, issuer string) *SupabaseAuth {
+	return &SupabaseAuth{jwtSecret: []byte(jwtSecret), issuer: issuer}
 }
 
-// Verify validates the Supabase JWT from the Authorization header.
+type supabaseClaims struct {
+	Email string `json:"email"`
+	jwt.RegisteredClaims
+}
+
+// Verify validates the Supabase JWT and sets claims["sub"] as user_id in context.
 func (m *SupabaseAuth) Verify(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		authHeader := c.Request().Header.Get("Authorization")
@@ -25,20 +33,28 @@ func (m *SupabaseAuth) Verify(next echo.HandlerFunc) echo.HandlerFunc {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 		}
 
-		token := strings.TrimPrefix(authHeader, "Bearer ")
-
-		claims := jwt.MapClaims{}
-		parsed, err := jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (interface{}, error) {
+		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+		claims := &supabaseClaims{}
+		token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+				return nil, echo.ErrUnauthorized
 			}
-			return []byte(m.jwtSecret), nil
-		})
-		if err != nil || !parsed.Valid {
+			return m.jwtSecret, nil
+		}, jwt.WithExpirationRequired())
+		if err != nil || !token.Valid {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid token"})
 		}
 
-		c.Set("user_id", claims["sub"])
+		if m.issuer != "" && claims.Issuer != m.issuer {
+			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid token"})
+		}
+
+		sub, err := claims.GetSubject()
+		if err != nil || sub == "" {
+			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid token"})
+		}
+
+		c.Set(ContextKeyUserID, sub)
 		return next(c)
 	}
 }

@@ -62,6 +62,15 @@ services:
         "up"
       ]
     restart: on-failure
+    volumes:
+      - ./sql/migrations:/migrations
+    command: >
+      -path=/migrations
+      -database=postgres://dev_user:dev_password@db:5432/roadmap_dev?sslmode=disable
+      up
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - app-network
 

@@ -1,6 +1,8 @@
 package dicontainer
 
 import (
+	"os"
+
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/Piapuro/roadmap_api/adapter"
@@ -11,6 +13,16 @@ import (
 	"github.com/Piapuro/roadmap_api/router"
 	"github.com/Piapuro/roadmap_api/service"
 	"github.com/Piapuro/roadmap_api/utils"
+	echoSwagger "github.com/swaggo/echo-swagger"
+	"github.com/your-name/roadmap/api/adapter"
+	"github.com/your-name/roadmap/api/controller"
+	"github.com/your-name/roadmap/api/driver"
+	"github.com/your-name/roadmap/api/middleware"
+	"github.com/your-name/roadmap/api/query"
+	"github.com/your-name/roadmap/api/router"
+	"github.com/your-name/roadmap/api/service"
+	apperrors "github.com/your-name/roadmap/api/utils/errors"
+	"go.uber.org/zap"
 )
 
 type Container struct {
@@ -18,6 +30,12 @@ type Container struct {
 }
 
 func New() (*Container, error) {
+	// Logger
+	logger, err := zap.NewProduction()
+	if err != nil {
+		return nil, err
+	}
+
 	// DB
 	db, err := driver.NewPostgresDB()
 	if err != nil {
@@ -25,7 +43,10 @@ func New() (*Container, error) {
 	}
 
 	// Supabase config
-	supabaseCfg := driver.NewSupabaseConfig()
+	supabaseCfg, err := driver.NewSupabaseConfig()
+	if err != nil {
+		return nil, err
+	}
 
 	// sqlc queries
 	q := query.New(db)
@@ -56,18 +77,23 @@ func New() (*Container, error) {
 	skillController := controller.NewSkillController()
 
 	// Middleware
-	auth := middleware.NewSupabaseAuth(supabaseCfg.JWTSecret)
+	auth := middleware.NewSupabaseAuth(supabaseCfg.JWTSecret, supabaseCfg.URL+"/auth/v1")
 
 	// Echo
 	e := echo.New()
-	e.Validator = utils.NewValidator()
-	e.Use(echoMiddleware.Logger())
+	e.HTTPErrorHandler = apperrors.NewGlobalErrorHandler(logger)
+	e.Use(echoMiddleware.RequestLogger())
 	e.Use(echoMiddleware.Recover())
 
 	// Health check
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(200, map[string]string{"status": "ok"})
 	})
+
+	// Swagger UI（本番環境では無効化）
+	if os.Getenv("APP_ENV") != "production" {
+		e.GET("/swagger/*", echoSwagger.WrapHandler)
+	}
 
 	// Routes
 	router.RegisterAuthRoutes(e, authController)

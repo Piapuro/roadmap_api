@@ -9,6 +9,7 @@ type RequirementResponse struct {
 	DifficultyLevel int       `json:"difficulty_level"`
 	FreeText        string    `json:"free_text"`
 	SupplementURL   string    `json:"supplement_url"`
+	Features        []string  `json:"features"`
 	Status          string    `json:"status"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`

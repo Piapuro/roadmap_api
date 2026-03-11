@@ -1,0 +1,5 @@
+.git
+.env
+key.json
+*_test.go
+README.md

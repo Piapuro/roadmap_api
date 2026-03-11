@@ -36,3 +36,7 @@ WHERE user_id = $1;
 INSERT INTO user_skills (user_id, skill_name, experience_years, is_learning_goal)
 VALUES ($1, $2, $3, $4)
 RETURNING *;
+-- name: AssignGlobalRole :exec
+INSERT INTO user_global_roles (user_id, global_role_id)
+VALUES ($1, $2)
+ON CONFLICT DO NOTHING;
