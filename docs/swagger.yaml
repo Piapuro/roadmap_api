@@ -171,6 +171,19 @@ definitions:
       updated_at:
         type: string
     type: object
+  response.SignUpResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+      user:
+        $ref: '#/definitions/response.UserResponse'
+    type: object
   response.TeamResponse:
     properties:
       created_at:
@@ -289,9 +302,7 @@ paths:
         "201":
           description: Created
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.SignUpResponse'
         "400":
           description: Bad Request
           schema:
@@ -949,6 +960,47 @@ paths:
       summary: 自分のプロフィール更新
       tags:
       - users
+  /webhooks/supabase/user-created:
+    post:
+      consumes:
+      - application/json
+      description: Supabase auth.users INSERT 時に LOGIN_USER グローバルロールを付与する
+      parameters:
+      - description: Webhook署名シークレット
+        in: header
+        name: x-webhook-secret
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ユーザー作成Webhook
+      tags:
+      - webhooks
 securityDefinitions:
   BearerAuth:
     description: '"Bearer {Supabase JWT token}" の形式で入力してください'
