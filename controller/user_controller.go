@@ -12,6 +12,8 @@ import (
 	"github.com/Piapuro/roadmap_api/service"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/Piapuro/roadmap_api/requests"
+	"github.com/Piapuro/roadmap_api/service"
 )
 
 type UserController struct {
@@ -29,6 +31,7 @@ func NewUserController(userService *service.UserService) *UserController {
 // @Produce      json
 // @Success      200  {object}  response.UserResponse
 // @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /users/me [get]
@@ -47,6 +50,7 @@ func (c *UserController) GetMe(ctx echo.Context) error {
 // @Success      200   {object}  response.UserResponse
 // @Failure      400   {object}  map[string]string
 // @Failure      401   {object}  map[string]string
+// @Failure      403   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /users/me [put]

@@ -106,7 +106,8 @@ definitions:
     type: object
   requests.UpdateRoadmapRequest:
     properties:
-      content: {}
+      content:
+        type: object
       title:
         example: ECサイト開発ロードマップ v2
         type: string
@@ -129,68 +130,122 @@ definitions:
     required:
     - name
     type: object
+  response.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+      user:
+        $ref: '#/definitions/response.UserResponse'
+    type: object
   response.RequirementResponse:
     properties:
       created_at:
+        example: "2024-01-01T00:00:00Z"
         type: string
       difficulty_level:
+        example: 2
         type: integer
       features:
+        example:
+        - ログイン機能
+        - 商品一覧
+        - カート機能
         items:
           type: string
         type: array
       free_text:
+        example: ECサイトを作りたい
         type: string
       id:
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       product_type:
+        example: web
         type: string
       status:
+        example: draft
         type: string
       supplement_url:
+        example: https://example.com/spec
         type: string
       team_id:
+        example: 550e8400-e29b-41d4-a716-446655440001
         type: string
       updated_at:
+        example: "2024-01-01T00:00:00Z"
         type: string
     type: object
   response.RoadmapResponse:
     properties:
       confirmed_at:
+        example: "2024-06-01T00:00:00Z"
         type: string
       created_at:
+        example: "2024-01-01T00:00:00Z"
         type: string
       id:
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       requirement_id:
+        example: 550e8400-e29b-41d4-a716-446655440002
         type: string
       status:
+        example: draft
         type: string
       team_id:
+        example: 550e8400-e29b-41d4-a716-446655440001
         type: string
       updated_at:
+        example: "2024-01-01T00:00:00Z"
         type: string
+    type: object
+  response.SignUpResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+      user:
+        $ref: '#/definitions/response.UserResponse'
     type: object
   response.TeamResponse:
     properties:
       created_at:
+        example: "2024-01-01T00:00:00Z"
         type: string
       created_by:
+        example: 550e8400-e29b-41d4-a716-446655440001
         type: string
       id:
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       name:
+        example: Aチーム
         type: string
     type: object
   response.UserResponse:
     properties:
       created_at:
+        example: "2024-01-01T00:00:00Z"
         type: string
       email:
+        example: user@example.com
         type: string
       id:
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       name:
+        example: 山田太郎
         type: string
     type: object
 host: localhost:8080
@@ -204,7 +259,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: メールアドレスとパスワードで認証し、JWTトークンを取得します
+      description: '[認証不要] メールアドレスとパスワードで認証し、JWTトークンを取得します（未実装）'
       parameters:
       - description: ログイン情報
         in: body
@@ -218,9 +273,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.LoginResponse'
         "400":
           description: Bad Request
           schema:
@@ -244,7 +297,7 @@ paths:
       - auth
   /auth/logout:
     post:
-      description: 現在のセッションを無効化します
+      description: 現在のセッションを無効化します（未実装）
       produces:
       - application/json
       responses:
@@ -289,9 +342,7 @@ paths:
         "201":
           description: Created
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.SignUpResponse'
         "400":
           description: Bad Request
           schema:
@@ -344,6 +395,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal Server Error
           schema:
@@ -373,6 +430,12 @@ paths:
             $ref: '#/definitions/response.RequirementResponse'
         "401":
           description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
           schema:
             additionalProperties:
               type: string
@@ -429,6 +492,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "404":
           description: Not Found
           schema:
@@ -464,6 +533,12 @@ paths:
             $ref: '#/definitions/response.RequirementResponse'
         "401":
           description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
           schema:
             additionalProperties:
               type: string
@@ -509,6 +584,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal Server Error
           schema:
@@ -550,6 +631,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal Server Error
           schema:
@@ -575,6 +662,12 @@ paths:
           description: No Content
         "401":
           description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
           schema:
             additionalProperties:
               type: string
@@ -613,6 +706,12 @@ paths:
             $ref: '#/definitions/response.RoadmapResponse'
         "401":
           description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
           schema:
             additionalProperties:
               type: string
@@ -669,6 +768,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "404":
           description: Not Found
           schema:
@@ -700,6 +805,12 @@ paths:
             type: array
         "401":
           description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
           schema:
             additionalProperties:
               type: string
@@ -745,6 +856,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal Server Error
           schema:
@@ -770,6 +887,12 @@ paths:
           description: No Content
         "401":
           description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
           schema:
             additionalProperties:
               type: string
@@ -808,6 +931,12 @@ paths:
             $ref: '#/definitions/response.TeamResponse'
         "401":
           description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
           schema:
             additionalProperties:
               type: string
@@ -864,6 +993,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "404":
           description: Not Found
           schema:
@@ -893,6 +1028,12 @@ paths:
             $ref: '#/definitions/response.UserResponse'
         "401":
           description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
           schema:
             additionalProperties:
               type: string
@@ -938,6 +1079,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal Server Error
           schema:
@@ -949,6 +1096,47 @@ paths:
       summary: 自分のプロフィール更新
       tags:
       - users
+  /webhooks/supabase/user-created:
+    post:
+      consumes:
+      - application/json
+      description: Supabase auth.users INSERT 時に LOGIN_USER グローバルロールを付与する
+      parameters:
+      - description: Webhook署名シークレット
+        in: header
+        name: x-webhook-secret
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ユーザー作成Webhook
+      tags:
+      - webhooks
 securityDefinitions:
   BearerAuth:
     description: '"Bearer {Supabase JWT token}" の形式で入力してください'

@@ -14,14 +14,15 @@ import (
 	"github.com/Piapuro/roadmap_api/service"
 	"github.com/Piapuro/roadmap_api/utils"
 	echoSwagger "github.com/swaggo/echo-swagger"
-	"github.com/your-name/roadmap/api/adapter"
-	"github.com/your-name/roadmap/api/controller"
-	"github.com/your-name/roadmap/api/driver"
-	"github.com/your-name/roadmap/api/middleware"
-	"github.com/your-name/roadmap/api/query"
-	"github.com/your-name/roadmap/api/router"
-	"github.com/your-name/roadmap/api/service"
-	apperrors "github.com/your-name/roadmap/api/utils/errors"
+	"github.com/Piapuro/roadmap_api/adapter"
+	"github.com/Piapuro/roadmap_api/controller"
+	"github.com/Piapuro/roadmap_api/driver"
+	"github.com/Piapuro/roadmap_api/middleware"
+	"github.com/Piapuro/roadmap_api/query"
+	"github.com/Piapuro/roadmap_api/router"
+	"github.com/Piapuro/roadmap_api/service"
+	apperrors "github.com/Piapuro/roadmap_api/utils/errors"
+	appvalidator "github.com/Piapuro/roadmap_api/utils/validator"
 	"go.uber.org/zap"
 )
 
@@ -59,7 +60,7 @@ func New() (*Container, error) {
 	aiAdapter := adapter.NewAIAdapter()
 
 	// Services
-	authService := service.NewAuthService()
+	authService := service.NewAuthService(supabaseCfg.URL, supabaseCfg.AnonKey)
 	userService := service.NewUserService(userAdapter)
 	teamService := service.NewTeamService(teamAdapter)
 	requirementService := service.NewRequirementService(requirementAdapter)
@@ -73,14 +74,17 @@ func New() (*Container, error) {
 	teamController := controller.NewTeamController(teamService)
 	requirementController := controller.NewRequirementController(requirementService)
 	roadmapController := controller.NewRoadmapController(roadmapService)
-	webhookController := controller.NewWebhookController(webhookAdapter)
-	skillController := controller.NewSkillController()
+	webhookController, err := controller.NewWebhookController(webhookAdapter, os.Getenv("WEBHOOK_SECRET"))
+	if err != nil {
+		return nil, err
+	}
 
 	// Middleware
 	auth := middleware.NewSupabaseAuth(supabaseCfg.JWTSecret, supabaseCfg.URL+"/auth/v1")
 
 	// Echo
 	e := echo.New()
+	e.Validator = appvalidator.New()
 	e.HTTPErrorHandler = apperrors.NewGlobalErrorHandler(logger)
 	e.Use(echoMiddleware.RequestLogger())
 	e.Use(echoMiddleware.Recover())
@@ -102,7 +106,6 @@ func New() (*Container, error) {
 	router.RegisterRequirementRoutes(e, requirementController, auth)
 	router.RegisterRoadmapRoutes(e, roadmapController, auth)
 	router.RegisterWebhookRoutes(e, webhookController)
-	router.RegisterSkillRoutes(e, skillController)
 
 	return &Container{echo: e}, nil
 }

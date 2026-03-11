@@ -26,6 +26,7 @@ func NewTeamController(teamService *service.TeamService) *TeamController {
 // @Success      201   {object}  response.TeamResponse
 // @Failure      400   {object}  map[string]string
 // @Failure      401   {object}  map[string]string
+// @Failure      403   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /teams [post]
@@ -45,6 +46,7 @@ func (c *TeamController) CreateTeam(ctx echo.Context) error {
 // @Produce      json
 // @Success      200  {array}   response.TeamResponse
 // @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /teams [get]
@@ -61,6 +63,7 @@ func (c *TeamController) GetTeams(ctx echo.Context) error {
 // @Param        id   path      string  true  "チームID (UUID)"
 // @Success      200  {object}  response.TeamResponse
 // @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Security     BearerAuth
@@ -81,6 +84,7 @@ func (c *TeamController) GetTeam(ctx echo.Context) error {
 // @Success      200   {object}  response.TeamResponse
 // @Failure      400   {object}  map[string]string
 // @Failure      401   {object}  map[string]string
+// @Failure      403   {object}  map[string]string
 // @Failure      404   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Security     BearerAuth
@@ -101,6 +105,7 @@ func (c *TeamController) UpdateTeam(ctx echo.Context) error {
 // @Param        id   path  string  true  "チームID (UUID)"
 // @Success      204  "No Content"
 // @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Security     BearerAuth
