@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/your-name/roadmap/api/requests"
-	"github.com/your-name/roadmap/api/service"
+	"github.com/Piapuro/roadmap_api/requests"
+	"github.com/Piapuro/roadmap_api/service"
 )
 
 type RoadmapController struct {
@@ -26,6 +26,7 @@ func NewRoadmapController(roadmapService *service.RoadmapService) *RoadmapContro
 // @Success      201   {object}  response.RoadmapResponse
 // @Failure      400   {object}  map[string]string
 // @Failure      401   {object}  map[string]string
+// @Failure      403   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /roadmaps [post]
@@ -45,6 +46,7 @@ func (c *RoadmapController) CreateRoadmap(ctx echo.Context) error {
 // @Produce      json
 // @Success      200  {array}   response.RoadmapResponse
 // @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /roadmaps [get]
@@ -61,6 +63,7 @@ func (c *RoadmapController) GetRoadmaps(ctx echo.Context) error {
 // @Param        id   path      string  true  "ロードマップID (UUID)"
 // @Success      200  {object}  response.RoadmapResponse
 // @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Security     BearerAuth
@@ -81,6 +84,7 @@ func (c *RoadmapController) GetRoadmap(ctx echo.Context) error {
 // @Success      200   {object}  response.RoadmapResponse
 // @Failure      400   {object}  map[string]string
 // @Failure      401   {object}  map[string]string
+// @Failure      403   {object}  map[string]string
 // @Failure      404   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Security     BearerAuth
@@ -101,6 +105,7 @@ func (c *RoadmapController) UpdateRoadmap(ctx echo.Context) error {
 // @Param        id   path  string  true  "ロードマップID (UUID)"
 // @Success      204  "No Content"
 // @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Security     BearerAuth

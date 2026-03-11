@@ -1,11 +1,12 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 
+	"github.com/Piapuro/roadmap_api/requests"
+	"github.com/Piapuro/roadmap_api/service"
 	"github.com/labstack/echo/v4"
-	"github.com/your-name/roadmap/api/requests"
-	"github.com/your-name/roadmap/api/service"
 )
 
 type AuthController struct {
@@ -23,7 +24,7 @@ func NewAuthController(authService *service.AuthService) *AuthController {
 // @Accept       json
 // @Produce      json
 // @Param        body  body      requests.SignUpRequest  true  "登録情報"
-// @Success      201   {object}  map[string]string
+// @Success      201   {object}  response.SignUpResponse
 // @Failure      400   {object}  map[string]string
 // @Failure      409   {object}  map[string]string  "メールアドレスが既に登録済み"
 // @Failure      500   {object}  map[string]string
@@ -31,20 +32,30 @@ func NewAuthController(authService *service.AuthService) *AuthController {
 func (c *AuthController) SignUp(ctx echo.Context) error {
 	var req requests.SignUpRequest
 	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return ctx.JSON(400, map[string]string{"error": err.Error()})
 	}
-	// TODO: implement
-	return ctx.JSON(http.StatusCreated, nil)
+	if err := ctx.Validate(&req); err != nil {
+		return ctx.JSON(400, map[string]string{"error": err.Error()})
+	}
+	res, err := c.authService.SignUp(req.Email, req.Password, req.Name)
+	if err != nil {
+		if errors.Is(err, service.ErrEmailAlreadyExists) {
+			return ctx.JSON(http.StatusConflict, map[string]string{"error": "email already registered"})
+		}
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	}
+	return ctx.JSON(http.StatusCreated, res)
 }
+
 
 // Login godoc
 // @Summary      ログイン
-// @Description  メールアドレスとパスワードで認証し、JWTトークンを取得します
+// @Description  [認証不要] メールアドレスとパスワードで認証し、JWTトークンを取得します（未実装）
 // @Tags         auth
 // @Accept       json
 // @Produce      json
 // @Param        body  body      requests.LoginRequest  true  "ログイン情報"
-// @Success      200   {object}  map[string]string
+// @Success      200   {object}  response.LoginResponse
 // @Failure      400   {object}  map[string]string
 // @Failure      401   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
@@ -60,7 +71,7 @@ func (c *AuthController) Login(ctx echo.Context) error {
 
 // Logout godoc
 // @Summary      ログアウト
-// @Description  現在のセッションを無効化します
+// @Description  現在のセッションを無効化します（未実装）
 // @Tags         auth
 // @Produce      json
 // @Success      200  {object}  map[string]string
