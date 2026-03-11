@@ -14,6 +14,7 @@ import (
 	"github.com/Piapuro/roadmap_api/router"
 	"github.com/Piapuro/roadmap_api/service"
 	apperrors "github.com/Piapuro/roadmap_api/utils/errors"
+	appvalidator "github.com/Piapuro/roadmap_api/utils/validator"
 	"go.uber.org/zap"
 )
 
@@ -51,7 +52,7 @@ func New() (*Container, error) {
 	aiAdapter := adapter.NewAIAdapter()
 
 	// Services
-	authService := service.NewAuthService()
+	authService := service.NewAuthService(supabaseCfg.URL, supabaseCfg.AnonKey)
 	userService := service.NewUserService(userAdapter)
 	teamService := service.NewTeamService(teamAdapter)
 	requirementService := service.NewRequirementService(requirementAdapter)
@@ -65,13 +66,17 @@ func New() (*Container, error) {
 	teamController := controller.NewTeamController(teamService)
 	requirementController := controller.NewRequirementController(requirementService)
 	roadmapController := controller.NewRoadmapController(roadmapService)
-	webhookController := controller.NewWebhookController(webhookAdapter, os.Getenv("WEBHOOK_SECRET"))
+	webhookController, err := controller.NewWebhookController(webhookAdapter, os.Getenv("WEBHOOK_SECRET"))
+	if err != nil {
+		return nil, err
+	}
 
 	// Middleware
 	auth := middleware.NewSupabaseAuth(supabaseCfg.JWTSecret, supabaseCfg.URL+"/auth/v1")
 
 	// Echo
 	e := echo.New()
+	e.Validator = appvalidator.New()
 	e.HTTPErrorHandler = apperrors.NewGlobalErrorHandler(logger)
 	e.Use(echoMiddleware.RequestLogger())
 	e.Use(echoMiddleware.Recover())
