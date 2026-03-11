@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/your-name/roadmap/api/requests"
-	"github.com/your-name/roadmap/api/service"
+	"github.com/Piapuro/roadmap_api/requests"
+	"github.com/Piapuro/roadmap_api/service"
 )
 
 type TeamController struct {

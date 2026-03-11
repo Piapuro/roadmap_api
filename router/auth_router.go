@@ -2,7 +2,7 @@ package router
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/your-name/roadmap/api/controller"
+	"github.com/Piapuro/roadmap_api/controller"
 )
 
 func RegisterAuthRoutes(e *echo.Echo, c *controller.AuthController) {

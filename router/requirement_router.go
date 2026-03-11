@@ -2,8 +2,8 @@ package router
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/your-name/roadmap/api/controller"
-	"github.com/your-name/roadmap/api/middleware"
+	"github.com/Piapuro/roadmap_api/controller"
+	"github.com/Piapuro/roadmap_api/middleware"
 )
 
 func RegisterRequirementRoutes(e *echo.Echo, c *controller.RequirementController, m *middleware.SupabaseAuth) {
