@@ -45,11 +45,27 @@ definitions:
     type: object
   requests.CreateTeamRequest:
     properties:
+      end_date:
+        example: "2025-03-31"
+        type: string
+      goal:
+        example: Webアプリ開発
+        type: string
+      level:
+        example: beginner
+        type: string
       name:
         example: Aチーム
         type: string
+      start_date:
+        example: "2025-01-01"
+        type: string
     required:
+    - end_date
+    - goal
+    - level
     - name
+    - start_date
     type: object
   requests.LoginRequest:
     properties:
@@ -177,9 +193,17 @@ definitions:
         type: string
       created_by:
         type: string
+      end_date:
+        type: string
+      goal:
+        type: string
       id:
         type: string
+      level:
+        type: string
       name:
+        type: string
+      start_date:
         type: string
     type: object
   response.UserResponse:

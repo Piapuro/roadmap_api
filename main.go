@@ -4,9 +4,8 @@ package main
 import (
 	"log"
 
+	_ "github.com/Piapuro/roadmap_api/docs"
 	"github.com/Piapuro/roadmap_api/dicontainer"
-	_ "github.com/your-name/roadmap/api/docs"
-	"github.com/your-name/roadmap/api/dicontainer"
 )
 
 // @title           Roadmap API

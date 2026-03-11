@@ -13,15 +13,8 @@ import (
 	"github.com/Piapuro/roadmap_api/router"
 	"github.com/Piapuro/roadmap_api/service"
 	"github.com/Piapuro/roadmap_api/utils"
+	apperrors "github.com/Piapuro/roadmap_api/utils/errors"
 	echoSwagger "github.com/swaggo/echo-swagger"
-	"github.com/your-name/roadmap/api/adapter"
-	"github.com/your-name/roadmap/api/controller"
-	"github.com/your-name/roadmap/api/driver"
-	"github.com/your-name/roadmap/api/middleware"
-	"github.com/your-name/roadmap/api/query"
-	"github.com/your-name/roadmap/api/router"
-	"github.com/your-name/roadmap/api/service"
-	apperrors "github.com/your-name/roadmap/api/utils/errors"
 	"go.uber.org/zap"
 )
 
@@ -73,7 +66,7 @@ func New() (*Container, error) {
 	teamController := controller.NewTeamController(teamService)
 	requirementController := controller.NewRequirementController(requirementService)
 	roadmapController := controller.NewRoadmapController(roadmapService)
-	webhookController := controller.NewWebhookController(webhookAdapter)
+	webhookController := controller.NewWebhookController(webhookAdapter, os.Getenv("WEBHOOK_SECRET"))
 	skillController := controller.NewSkillController()
 
 	// Middleware
@@ -81,6 +74,7 @@ func New() (*Container, error) {
 
 	// Echo
 	e := echo.New()
+	e.Validator = utils.NewValidator()
 	e.HTTPErrorHandler = apperrors.NewGlobalErrorHandler(logger)
 	e.Use(echoMiddleware.RequestLogger())
 	e.Use(echoMiddleware.Recover())

@@ -3,7 +3,9 @@ package controller
 import (
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/Piapuro/roadmap_api/middleware"
 	"github.com/Piapuro/roadmap_api/requests"
 	"github.com/Piapuro/roadmap_api/service"
 )
@@ -34,8 +36,25 @@ func (c *TeamController) CreateTeam(ctx echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
-	// TODO: implement
-	return ctx.JSON(http.StatusCreated, nil)
+	if err := ctx.Validate(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
+	userIDStr, ok := ctx.Get(middleware.ContextKeyUserID).(string)
+	if !ok || userIDStr == "" {
+		return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	}
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid user id"})
+	}
+
+	resp, err := c.teamService.CreateTeam(ctx.Request().Context(), userID, req)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return ctx.JSON(http.StatusCreated, resp)
 }
 
 // GetTeams godoc
