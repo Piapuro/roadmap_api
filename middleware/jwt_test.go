@@ -8,7 +8,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
-	"github.com/your-name/roadmap/api/middleware"
+	"github.com/Piapuro/roadmap_api/middleware"
 )
 
 const testSecret = "test-secret-key"

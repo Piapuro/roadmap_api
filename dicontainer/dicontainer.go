@@ -12,17 +12,9 @@ import (
 	"github.com/Piapuro/roadmap_api/query"
 	"github.com/Piapuro/roadmap_api/router"
 	"github.com/Piapuro/roadmap_api/service"
+	apperrors "github.com/Piapuro/roadmap_api/utils/errors"
 	"github.com/Piapuro/roadmap_api/utils"
 	echoSwagger "github.com/swaggo/echo-swagger"
-	"github.com/Piapuro/roadmap_api/adapter"
-	"github.com/Piapuro/roadmap_api/controller"
-	"github.com/Piapuro/roadmap_api/driver"
-	"github.com/Piapuro/roadmap_api/middleware"
-	"github.com/Piapuro/roadmap_api/query"
-	"github.com/Piapuro/roadmap_api/router"
-	"github.com/Piapuro/roadmap_api/service"
-	apperrors "github.com/Piapuro/roadmap_api/utils/errors"
-	appvalidator "github.com/Piapuro/roadmap_api/utils/validator"
 	"go.uber.org/zap"
 )
 
@@ -84,7 +76,7 @@ func New() (*Container, error) {
 
 	// Echo
 	e := echo.New()
-	e.Validator = appvalidator.New()
+	e.Validator = utils.NewValidator()
 	e.HTTPErrorHandler = apperrors.NewGlobalErrorHandler(logger)
 	e.Use(echoMiddleware.RequestLogger())
 	e.Use(echoMiddleware.Recover())

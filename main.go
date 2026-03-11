@@ -5,8 +5,7 @@ import (
 	"log"
 
 	"github.com/Piapuro/roadmap_api/dicontainer"
-	_ "github.com/your-name/roadmap/api/docs"
-	"github.com/your-name/roadmap/api/dicontainer"
+	_ "github.com/Piapuro/roadmap_api/docs"
 )
 
 // @title           Roadmap API

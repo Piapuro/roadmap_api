@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Piapuro/roadmap_api/response"
@@ -54,7 +56,8 @@ func (s *AuthService) SignUp(email, password, name string) (*response.SignUpResp
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, s.supabaseURL+"/auth/v1/signup", bytes.NewReader(body))
+	baseURL := strings.TrimSuffix(s.supabaseURL, "/")
+	req, err := http.NewRequest(http.MethodPost, baseURL+"/auth/v1/signup", bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -70,6 +73,7 @@ func (s *AuthService) SignUp(email, password, name string) (*response.SignUpResp
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		var errBody map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&errBody)
+		log.Printf("[AuthService] Supabase signup error: status=%d body=%v", resp.StatusCode, errBody)
 		if code, ok := errBody["error_code"].(string); ok && code == "user_already_exists" {
 			return nil, ErrEmailAlreadyExists
 		}
