@@ -1,6 +1,6 @@
 package adapter
 
-import "github.com/your-name/roadmap/api/query"
+import "github.com/Piapuro/roadmap_api/query"
 
 type RoadmapAdapter struct {
 	q *query.Queries

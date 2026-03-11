@@ -5,6 +5,14 @@ import (
 
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
+	"github.com/Piapuro/roadmap_api/adapter"
+	"github.com/Piapuro/roadmap_api/controller"
+	"github.com/Piapuro/roadmap_api/driver"
+	"github.com/Piapuro/roadmap_api/middleware"
+	"github.com/Piapuro/roadmap_api/query"
+	"github.com/Piapuro/roadmap_api/router"
+	"github.com/Piapuro/roadmap_api/service"
+	"github.com/Piapuro/roadmap_api/utils"
 	echoSwagger "github.com/swaggo/echo-swagger"
 	"github.com/Piapuro/roadmap_api/adapter"
 	"github.com/Piapuro/roadmap_api/controller"
@@ -45,7 +53,7 @@ func New() (*Container, error) {
 	q := query.New(db)
 
 	// Adapters
-	userAdapter := adapter.NewUserAdapter(q)
+	userAdapter := adapter.NewUserAdapter(q, db)
 	teamAdapter := adapter.NewTeamAdapter(q)
 	requirementAdapter := adapter.NewRequirementAdapter(q)
 	webhookAdapter := adapter.NewWebhookAdapter(db)
