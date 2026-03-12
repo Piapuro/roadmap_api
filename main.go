@@ -4,6 +4,7 @@ package main
 import (
 	"log"
 
+	_ "github.com/Piapuro/roadmap_api/docs"
 	"github.com/Piapuro/roadmap_api/dicontainer"
 	_ "github.com/Piapuro/roadmap_api/docs"
 )

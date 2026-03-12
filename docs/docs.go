@@ -1445,12 +1445,32 @@ const docTemplate = `{
         "requests.CreateTeamRequest": {
             "type": "object",
             "required": [
-                "name"
+                "end_date",
+                "goal",
+                "level",
+                "name",
+                "start_date"
             ],
             "properties": {
+                "end_date": {
+                    "type": "string",
+                    "example": "2025-03-31"
+                },
+                "goal": {
+                    "type": "string",
+                    "example": "Webアプリ開発"
+                },
+                "level": {
+                    "type": "string",
+                    "example": "beginner"
+                },
                 "name": {
                     "type": "string",
                     "example": "Aチーム"
+                },
+                "start_date": {
+                    "type": "string",
+                    "example": "2025-01-01"
                 }
             }
         },
@@ -1702,9 +1722,18 @@ const docTemplate = `{
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440001"
                 },
+                "end_date": {
+                    "type": "string"
+                },
+                "goal": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "level": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string",
