@@ -1313,6 +1313,131 @@
                 }
             }
         },
+        "/users/me/skills": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "ログイン中のユーザーのスキルレベル・bio・スキル一覧を返します",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "スキル・技術一覧取得",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.MySkillsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "スキルレベル・bio・スキル一覧を登録または上書き更新します。新規登録後のオンボーディング画面から呼び出します。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "スキル・技術登録（新規登録・更新）",
+                "parameters": [
+                    {
+                        "description": "スキル情報",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.UpsertSkillsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.MySkillsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/webhooks/supabase/user-created": {
             "post": {
                 "description": "Supabase auth.users INSERT 時に LOGIN_USER グローバルロールを付与する",
@@ -1508,6 +1633,24 @@
                 }
             }
         },
+        "requests.SkillInput": {
+            "type": "object",
+            "required": [
+                "skill_name"
+            ],
+            "properties": {
+                "experience_years": {
+                    "type": "number"
+                },
+                "is_learning_goal": {
+                    "type": "boolean"
+                },
+                "skill_name": {
+                    "type": "string",
+                    "maxLength": 30
+                }
+            }
+        },
         "requests.UpdateRequirementRequest": {
             "type": "object",
             "properties": {
@@ -1580,6 +1723,33 @@
                 }
             }
         },
+        "requests.UpsertSkillsRequest": {
+            "type": "object",
+            "required": [
+                "skill_level",
+                "skills"
+            ],
+            "properties": {
+                "bio": {
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "skill_level": {
+                    "type": "string",
+                    "enum": [
+                        "beginner",
+                        "intermediate",
+                        "advanced"
+                    ]
+                },
+                "skills": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/requests.SkillInput"
+                    }
+                }
+            }
+        },
         "response.LoginResponse": {
             "type": "object",
             "properties": {
@@ -1597,6 +1767,23 @@
                 },
                 "user": {
                     "$ref": "#/definitions/response.UserResponse"
+                }
+            }
+        },
+        "response.MySkillsResponse": {
+            "type": "object",
+            "properties": {
+                "bio": {
+                    "type": "string"
+                },
+                "skill_level": {
+                    "type": "string"
+                },
+                "skills": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.UserSkillResponse"
+                    }
                 }
             }
         },
@@ -1760,6 +1947,23 @@
                 "name": {
                     "type": "string",
                     "example": "山田太郎"
+                }
+            }
+        },
+        "response.UserSkillResponse": {
+            "type": "object",
+            "properties": {
+                "experience_years": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_learning_goal": {
+                    "type": "boolean"
+                },
+                "skill_name": {
+                    "type": "string"
                 }
             }
         }
