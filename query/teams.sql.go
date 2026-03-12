@@ -8,6 +8,7 @@ package query
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -161,6 +162,103 @@ func (q *Queries) UpdateTeam(ctx context.Context, arg UpdateTeamParams) (Team, e
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const issueInviteToken = `-- name: IssueInviteToken :one
+UPDATE teams
+SET invite_token = $2, invite_token_expires_at = $3, updated_at = NOW()
+WHERE id = $1
+RETURNING id, name, goal, level, start_date, end_date, is_archived, invite_token, invite_token_expires_at, created_by, created_at, updated_at
+`
+
+type IssueInviteTokenParams struct {
+	ID                   uuid.UUID
+	InviteToken          sql.NullString
+	InviteTokenExpiresAt sql.NullTime
+}
+
+func (q *Queries) IssueInviteToken(ctx context.Context, arg IssueInviteTokenParams) (Team, error) {
+	row := q.db.QueryRowContext(ctx, issueInviteToken, arg.ID, arg.InviteToken, arg.InviteTokenExpiresAt)
+	var i Team
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Goal,
+		&i.Level,
+		&i.StartDate,
+		&i.EndDate,
+		&i.IsArchived,
+		&i.InviteToken,
+		&i.InviteTokenExpiresAt,
+		&i.CreatedBy,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getTeamByInviteToken = `-- name: GetTeamByInviteToken :one
+SELECT id, name, goal, level, start_date, end_date, is_archived, invite_token, invite_token_expires_at, created_by, created_at, updated_at FROM teams
+WHERE invite_token = $1
+`
+
+func (q *Queries) GetTeamByInviteToken(ctx context.Context, token string) (Team, error) {
+	row := q.db.QueryRowContext(ctx, getTeamByInviteToken, token)
+	var i Team
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Goal,
+		&i.Level,
+		&i.StartDate,
+		&i.EndDate,
+		&i.IsArchived,
+		&i.InviteToken,
+		&i.InviteTokenExpiresAt,
+		&i.CreatedBy,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const isTeamOwner = `-- name: IsTeamOwner :one
+SELECT EXISTS(
+    SELECT 1 FROM user_team_roles
+    WHERE user_id = $1 AND team_id = $2 AND team_role_id = 2
+)
+`
+
+func (q *Queries) IsTeamOwner(ctx context.Context, userID uuid.UUID, teamID uuid.UUID) (bool, error) {
+	row := q.db.QueryRowContext(ctx, isTeamOwner, userID, teamID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const isTeamMember = `-- name: IsTeamMember :one
+SELECT EXISTS(
+    SELECT 1 FROM user_team_roles
+    WHERE user_id = $1 AND team_id = $2
+)
+`
+
+func (q *Queries) IsTeamMember(ctx context.Context, userID uuid.UUID, teamID uuid.UUID) (bool, error) {
+	row := q.db.QueryRowContext(ctx, isTeamMember, userID, teamID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const joinTeamAsMember = `-- name: JoinTeamAsMember :exec
+INSERT INTO user_team_roles (user_id, team_id, team_role_id)
+VALUES ($1, $2, 1)
+ON CONFLICT DO NOTHING
+`
+
+func (q *Queries) JoinTeamAsMember(ctx context.Context, userID uuid.UUID, teamID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, joinTeamAsMember, userID, teamID)
+	return err
 }
 
 const assignTeamOwner = `-- name: AssignTeamOwner :exec

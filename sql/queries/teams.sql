@@ -20,3 +20,30 @@ RETURNING *;
 -- name: DeleteTeam :exec
 DELETE FROM teams
 WHERE id = $1;
+
+-- name: IssueInviteToken :one
+UPDATE teams
+SET invite_token = $2, invite_token_expires_at = $3, updated_at = NOW()
+WHERE id = $1
+RETURNING *;
+
+-- name: GetTeamByInviteToken :one
+SELECT * FROM teams
+WHERE invite_token = $1;
+
+-- name: IsTeamOwner :one
+SELECT EXISTS(
+    SELECT 1 FROM user_team_roles
+    WHERE user_id = $1 AND team_id = $2 AND team_role_id = 2
+);
+
+-- name: IsTeamMember :one
+SELECT EXISTS(
+    SELECT 1 FROM user_team_roles
+    WHERE user_id = $1 AND team_id = $2
+);
+
+-- name: JoinTeamAsMember :exec
+INSERT INTO user_team_roles (user_id, team_id, team_role_id)
+VALUES ($1, $2, 1)
+ON CONFLICT DO NOTHING;
