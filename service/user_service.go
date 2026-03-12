@@ -17,6 +17,14 @@ func NewUserService(userAdapter *adapter.UserAdapter) *UserService {
 	return &UserService{userAdapter: userAdapter}
 }
 
+func (s *UserService) GetMe(ctx context.Context, userID uuid.UUID) (query.User, error) {
+	return s.userAdapter.GetMe(ctx, userID)
+}
+
+func (s *UserService) UpdateMe(ctx context.Context, userID uuid.UUID, name string) (query.User, error) {
+	return s.userAdapter.UpdateMe(ctx, userID, name)
+}
+
 func (s *UserService) GetMySkills(ctx context.Context, userID uuid.UUID) (query.User, []query.UserSkill, error) {
 	return s.userAdapter.GetMySkills(ctx, userID)
 }

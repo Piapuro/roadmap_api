@@ -2,6 +2,7 @@ package dicontainer
 
 import (
 	"os"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
@@ -77,7 +78,7 @@ func New() (*Container, error) {
 	skillController := controller.NewSkillController()
 
 	// Middleware
-	auth := middleware.NewSupabaseAuth(supabaseCfg.JWTSecret, supabaseCfg.URL+"/auth/v1")
+	auth := middleware.NewSupabaseAuth(supabaseCfg.JWTSecret, strings.TrimSuffix(supabaseCfg.URL, "/")+"/auth/v1")
 
 	// Echo
 	e := echo.New()
@@ -85,6 +86,12 @@ func New() (*Container, error) {
 	e.HTTPErrorHandler = apperrors.NewGlobalErrorHandler(logger)
 	e.Use(echoMiddleware.RequestLogger())
 	e.Use(echoMiddleware.Recover())
+	e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
+		AllowOrigins:     strings.Split(cfg.CORSAllowOrigins, ","),
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{echo.HeaderAuthorization, echo.HeaderContentType},
+		AllowCredentials: true,
+	}))
 
 	// Health check
 	e.GET("/health", func(c echo.Context) error {
@@ -97,7 +104,7 @@ func New() (*Container, error) {
 	}
 
 	// Routes
-	router.RegisterAuthRoutes(e, authController)
+	router.RegisterAuthRoutes(e, authController, auth)
 	router.RegisterUserRoutes(e, userController, auth)
 	router.RegisterTeamRoutes(e, teamController, auth)
 	router.RegisterRequirementRoutes(e, requirementController, auth)

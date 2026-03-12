@@ -29,34 +29,6 @@ func (q *Queries) AssignGlobalRole(ctx context.Context, arg AssignGlobalRolePara
 	return err
 }
 
-const createUser = `-- name: CreateUser :one
-INSERT INTO users (email, name)
-VALUES ($1, $2)
-RETURNING id, email, name, password_hash, avatar_url, bio, skill_level, created_at, updated_at
-`
-
-type CreateUserParams struct {
-	Email string
-	Name  string
-}
-
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.Email, arg.Name)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Email,
-		&i.Name,
-		&i.PasswordHash,
-		&i.AvatarUrl,
-		&i.Bio,
-		&i.SkillLevel,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const createUserSkill = `-- name: CreateUserSkill :one
 INSERT INTO user_skills (user_id, skill_name, experience_years, is_learning_goal)
 VALUES ($1, $2, $3, $4)
@@ -99,30 +71,8 @@ func (q *Queries) DeleteUserSkills(ctx context.Context, userID uuid.UUID) error 
 	return err
 }
 
-const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, password_hash, avatar_url, bio, skill_level, created_at, updated_at FROM users
-WHERE email = $1
-`
-
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Email,
-		&i.Name,
-		&i.PasswordHash,
-		&i.AvatarUrl,
-		&i.Bio,
-		&i.SkillLevel,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, name, password_hash, avatar_url, bio, skill_level, created_at, updated_at FROM users
+SELECT id, name, avatar_url, bio, skill_level, created_at, updated_at FROM user_profiles
 WHERE id = $1
 `
 
@@ -131,9 +81,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Email,
 		&i.Name,
-		&i.PasswordHash,
 		&i.AvatarUrl,
 		&i.Bio,
 		&i.SkillLevel,
@@ -179,26 +127,24 @@ func (q *Queries) ListUserSkills(ctx context.Context, userID uuid.UUID) ([]UserS
 	return items, nil
 }
 
-const updateUser = `-- name: UpdateUser :one
-UPDATE users
+const updateUserName = `-- name: UpdateUserName :one
+UPDATE user_profiles
 SET name = $2, updated_at = NOW()
 WHERE id = $1
-RETURNING id, email, name, password_hash, avatar_url, bio, skill_level, created_at, updated_at
+RETURNING id, name, avatar_url, bio, skill_level, created_at, updated_at
 `
 
-type UpdateUserParams struct {
+type UpdateUserNameParams struct {
 	ID   uuid.UUID
 	Name string
 }
 
-func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, updateUser, arg.ID, arg.Name)
+func (q *Queries) UpdateUserName(ctx context.Context, arg UpdateUserNameParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, updateUserName, arg.ID, arg.Name)
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Email,
 		&i.Name,
-		&i.PasswordHash,
 		&i.AvatarUrl,
 		&i.Bio,
 		&i.SkillLevel,
@@ -209,10 +155,10 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 }
 
 const updateUserProfile = `-- name: UpdateUserProfile :one
-UPDATE users
+UPDATE user_profiles
 SET skill_level = $2, bio = $3, updated_at = NOW()
 WHERE id = $1
-RETURNING id, email, name, password_hash, avatar_url, bio, skill_level, created_at, updated_at
+RETURNING id, name, avatar_url, bio, skill_level, created_at, updated_at
 `
 
 type UpdateUserProfileParams struct {
@@ -226,9 +172,7 @@ func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfilePa
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Email,
 		&i.Name,
-		&i.PasswordHash,
 		&i.AvatarUrl,
 		&i.Bio,
 		&i.SkillLevel,

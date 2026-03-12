@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/auth/login": {
             "post": {
-                "description": "[認証不要] メールアドレスとパスワードで認証し、JWTトークンを取得します（未実装）",
+                "description": "メールアドレスとパスワードで認証し、JWTトークンを取得します",
                 "consumes": [
                     "application/json"
                 ],
@@ -83,7 +83,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "現在のセッションを無効化します（未実装）",
+                "description": "現在のセッションを無効化します",
                 "produces": [
                     "application/json"
                 ],
@@ -1213,7 +1213,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.UserResponse"
+                            "$ref": "#/definitions/response.ProfileResponse"
                         }
                     },
                     "401": {
@@ -1225,8 +1225,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "403": {
-                        "description": "Forbidden",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1251,7 +1251,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "ログイン中のユーザー情報を更新します",
+                "description": "ログイン中のユーザーの名前を更新します",
                 "consumes": [
                     "application/json"
                 ],
@@ -1277,7 +1277,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.UserResponse"
+                            "$ref": "#/definitions/response.ProfileResponse"
                         }
                     },
                     "400": {
@@ -1298,8 +1298,133 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "403": {
-                        "description": "Forbidden",
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/skills": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "ログイン中のユーザーのスキルレベル・bio・スキル一覧を返します",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "スキル・技術一覧取得",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.MySkillsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "スキルレベル・bio・スキル一覧を登録または上書き更新します。新規登録後のオンボーディング画面から呼び出します。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "スキル・技術登録（新規登録・更新）",
+                "parameters": [
+                    {
+                        "description": "スキル情報",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.UpsertSkillsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.MySkillsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1514,6 +1639,24 @@ const docTemplate = `{
                 }
             }
         },
+        "requests.SkillInput": {
+            "type": "object",
+            "required": [
+                "skill_name"
+            ],
+            "properties": {
+                "experience_years": {
+                    "type": "number"
+                },
+                "is_learning_goal": {
+                    "type": "boolean"
+                },
+                "skill_name": {
+                    "type": "string",
+                    "maxLength": 30
+                }
+            }
+        },
         "requests.UpdateRequirementRequest": {
             "type": "object",
             "properties": {
@@ -1586,6 +1729,33 @@ const docTemplate = `{
                 }
             }
         },
+        "requests.UpsertSkillsRequest": {
+            "type": "object",
+            "required": [
+                "skill_level",
+                "skills"
+            ],
+            "properties": {
+                "bio": {
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "skill_level": {
+                    "type": "string",
+                    "enum": [
+                        "beginner",
+                        "intermediate",
+                        "advanced"
+                    ]
+                },
+                "skills": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/requests.SkillInput"
+                    }
+                }
+            }
+        },
         "response.LoginResponse": {
             "type": "object",
             "properties": {
@@ -1603,6 +1773,52 @@ const docTemplate = `{
                 },
                 "user": {
                     "$ref": "#/definitions/response.UserResponse"
+                }
+            }
+        },
+        "response.MySkillsResponse": {
+            "type": "object",
+            "properties": {
+                "bio": {
+                    "type": "string"
+                },
+                "skill_level": {
+                    "type": "string"
+                },
+                "skills": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.UserSkillResponse"
+                    }
+                }
+            }
+        },
+        "response.ProfileResponse": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "https://example.com/avatar.png"
+                },
+                "bio": {
+                    "type": "string",
+                    "example": "Goエンジニア"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "山田太郎"
+                },
+                "skill_level": {
+                    "type": "string",
+                    "example": "beginner"
                 }
             }
         },
@@ -1723,21 +1939,28 @@ const docTemplate = `{
                     "example": "550e8400-e29b-41d4-a716-446655440001"
                 },
                 "end_date": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2024-06-30T00:00:00Z"
                 },
                 "goal": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "バックエンド開発力向上"
                 },
                 "id": {
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "level": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "intermediate"
                 },
                 "name": {
                     "type": "string",
                     "example": "Aチーム"
+                },
+                "start_date": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
                 }
             }
         },
@@ -1759,6 +1982,23 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "山田太郎"
+                }
+            }
+        },
+        "response.UserSkillResponse": {
+            "type": "object",
+            "properties": {
+                "experience_years": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_learning_goal": {
+                    "type": "boolean"
+                },
+                "skill_name": {
+                    "type": "string"
                 }
             }
         }

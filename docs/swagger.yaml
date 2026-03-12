@@ -96,6 +96,18 @@ definitions:
     - name
     - password
     type: object
+  requests.SkillInput:
+    properties:
+      experience_years:
+        type: number
+      is_learning_goal:
+        type: boolean
+      skill_name:
+        maxLength: 30
+        type: string
+    required:
+    - skill_name
+    type: object
   requests.UpdateRequirementRequest:
     properties:
       difficulty_level:
@@ -146,6 +158,25 @@ definitions:
     required:
     - name
     type: object
+  requests.UpsertSkillsRequest:
+    properties:
+      bio:
+        maxLength: 200
+        type: string
+      skill_level:
+        enum:
+        - beginner
+        - intermediate
+        - advanced
+        type: string
+      skills:
+        items:
+          $ref: '#/definitions/requests.SkillInput'
+        type: array
+    required:
+    - skill_level
+    - skills
+    type: object
   response.LoginResponse:
     properties:
       access_token:
@@ -158,6 +189,38 @@ definitions:
         type: string
       user:
         $ref: '#/definitions/response.UserResponse'
+    type: object
+  response.MySkillsResponse:
+    properties:
+      bio:
+        type: string
+      skill_level:
+        type: string
+      skills:
+        items:
+          $ref: '#/definitions/response.UserSkillResponse'
+        type: array
+    type: object
+  response.ProfileResponse:
+    properties:
+      avatar_url:
+        example: https://example.com/avatar.png
+        type: string
+      bio:
+        example: Goエンジニア
+        type: string
+      created_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: 山田太郎
+        type: string
+      skill_level:
+        example: beginner
+        type: string
     type: object
   response.RequirementResponse:
     properties:
@@ -243,18 +306,22 @@ definitions:
         example: 550e8400-e29b-41d4-a716-446655440001
         type: string
       end_date:
+        example: "2024-06-30T00:00:00Z"
         type: string
       goal:
+        example: バックエンド開発力向上
         type: string
       id:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       level:
+        example: intermediate
         type: string
       name:
         example: Aチーム
         type: string
       start_date:
+        example: "2024-01-01T00:00:00Z"
         type: string
     type: object
   response.UserResponse:
@@ -272,6 +339,17 @@ definitions:
         example: 山田太郎
         type: string
     type: object
+  response.UserSkillResponse:
+    properties:
+      experience_years:
+        type: number
+      id:
+        type: string
+      is_learning_goal:
+        type: boolean
+      skill_name:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -283,7 +361,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: '[認証不要] メールアドレスとパスワードで認証し、JWTトークンを取得します（未実装）'
+      description: メールアドレスとパスワードで認証し、JWTトークンを取得します
       parameters:
       - description: ログイン情報
         in: body
@@ -321,7 +399,7 @@ paths:
       - auth
   /auth/logout:
     post:
-      description: 現在のセッションを無効化します（未実装）
+      description: 現在のセッションを無効化します
       produces:
       - application/json
       responses:
@@ -1049,15 +1127,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.UserResponse'
+            $ref: '#/definitions/response.ProfileResponse'
         "401":
           description: Unauthorized
           schema:
             additionalProperties:
               type: string
             type: object
-        "403":
-          description: Forbidden
+        "404":
+          description: Not Found
           schema:
             additionalProperties:
               type: string
@@ -1076,7 +1154,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: ログイン中のユーザー情報を更新します
+      description: ログイン中のユーザーの名前を更新します
       parameters:
       - description: 更新情報
         in: body
@@ -1090,7 +1168,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.UserResponse'
+            $ref: '#/definitions/response.ProfileResponse'
         "400":
           description: Bad Request
           schema:
@@ -1103,8 +1181,8 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "403":
-          description: Forbidden
+        "404":
+          description: Not Found
           schema:
             additionalProperties:
               type: string
@@ -1118,6 +1196,86 @@ paths:
       security:
       - BearerAuth: []
       summary: 自分のプロフィール更新
+      tags:
+      - users
+  /users/me/skills:
+    get:
+      description: ログイン中のユーザーのスキルレベル・bio・スキル一覧を返します
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.MySkillsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: スキル・技術一覧取得
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: スキルレベル・bio・スキル一覧を登録または上書き更新します。新規登録後のオンボーディング画面から呼び出します。
+      parameters:
+      - description: スキル情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/requests.UpsertSkillsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.MySkillsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: スキル・技術登録（新規登録・更新）
       tags:
       - users
   /webhooks/supabase/user-created:

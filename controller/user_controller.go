@@ -27,40 +27,79 @@ func NewUserController(userService *service.UserService) *UserController {
 // @Description  ログイン中のユーザー情報を返します
 // @Tags         users
 // @Produce      json
-// @Success      200  {object}  response.UserResponse
+// @Success      200  {object}  response.ProfileResponse
 // @Failure      401  {object}  map[string]string
-// @Failure      403  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /users/me [get]
 func (c *UserController) GetMe(ctx echo.Context) error {
-	// TODO: implement
-	return ctx.JSON(http.StatusOK, nil)
+	userID, err := parseUserID(ctx)
+	if err != nil {
+		return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid user id"})
+	}
+
+	user, err := c.userService.GetMe(ctx.Request().Context(), userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ctx.JSON(http.StatusNotFound, map[string]string{"error": "user not found"})
+		}
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	}
+
+	return ctx.JSON(http.StatusOK, buildProfileResponse(user))
 }
 
 // UpdateMe godoc
 // @Summary      自分のプロフィール更新
-// @Description  ログイン中のユーザー情報を更新します
+// @Description  ログイン中のユーザーの名前を更新します
 // @Tags         users
 // @Accept       json
 // @Produce      json
 // @Param        body  body      requests.UpdateUserRequest  true  "更新情報"
-// @Success      200   {object}  response.UserResponse
+// @Success      200   {object}  response.ProfileResponse
 // @Failure      400   {object}  map[string]string
 // @Failure      401   {object}  map[string]string
-// @Failure      403   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /users/me [put]
 func (c *UserController) UpdateMe(ctx echo.Context) error {
+	userID, err := parseUserID(ctx)
+	if err != nil {
+		return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid user id"})
+	}
+
 	var req requests.UpdateUserRequest
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
-	// TODO: implement
-	return ctx.JSON(http.StatusOK, nil)
+	if err := ctx.Validate(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
+	user, err := c.userService.UpdateMe(ctx.Request().Context(), userID, req.Name)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ctx.JSON(http.StatusNotFound, map[string]string{"error": "user not found"})
+		}
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	}
+
+	return ctx.JSON(http.StatusOK, buildProfileResponse(user))
 }
 
+// GetMySkills godoc
+// @Summary      スキル・技術一覧取得
+// @Description  ログイン中のユーザーのスキルレベル・bio・スキル一覧を返します
+// @Tags         users
+// @Produce      json
+// @Success      200  {object}  response.MySkillsResponse
+// @Failure      401  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /users/me/skills [get]
 func (c *UserController) GetMySkills(ctx echo.Context) error {
 	userID, err := parseUserID(ctx)
 	if err != nil {
@@ -73,12 +112,26 @@ func (c *UserController) GetMySkills(ctx echo.Context) error {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ctx.JSON(http.StatusNotFound, map[string]string{"error": "user not found"})
 		}
-		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 	}
 
 	return ctx.JSON(http.StatusOK, buildMySkillsResponse(user, skills))
 }
 
+// UpsertMySkills godoc
+// @Summary      スキル・技術登録（新規登録・更新）
+// @Description  スキルレベル・bio・スキル一覧を登録または上書き更新します。新規登録後のオンボーディング画面から呼び出します。
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        body  body      requests.UpsertSkillsRequest  true  "スキル情報"
+// @Success      200   {object}  response.MySkillsResponse
+// @Failure      400   {object}  map[string]string
+// @Failure      401   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /users/me/skills [put]
 func (c *UserController) UpsertMySkills(ctx echo.Context) error {
 	userID, err := parseUserID(ctx)
 	if err != nil {
@@ -100,7 +153,7 @@ func (c *UserController) UpsertMySkills(ctx echo.Context) error {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ctx.JSON(http.StatusNotFound, map[string]string{"error": "user not found"})
 		}
-		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 	}
 
 	return ctx.JSON(http.StatusOK, buildMySkillsResponse(user, skills))
@@ -113,6 +166,25 @@ func parseUserID(ctx echo.Context) (uuid.UUID, error) {
 		return uuid.UUID{}, echo.ErrUnauthorized
 	}
 	return uuid.Parse(str)
+}
+
+func buildProfileResponse(user query.User) response.ProfileResponse {
+	var avatarURL *string
+	if user.AvatarUrl.Valid {
+		avatarURL = &user.AvatarUrl.String
+	}
+	bio := ""
+	if user.Bio.Valid {
+		bio = user.Bio.String
+	}
+	return response.ProfileResponse{
+		ID:         user.ID.String(),
+		Name:       user.Name,
+		AvatarURL:  avatarURL,
+		Bio:        bio,
+		SkillLevel: user.SkillLevel,
+		CreatedAt:  user.CreatedAt,
+	}
 }
 
 func buildMySkillsResponse(user query.User, skills []query.UserSkill) response.MySkillsResponse {
