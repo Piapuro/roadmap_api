@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/auth/login": {
             "post": {
-                "description": "[認証不要] メールアドレスとパスワードで認証し、JWTトークンを取得します（未実装）",
+                "description": "メールアドレスとパスワードで認証し、JWTトークンを取得します",
                 "consumes": [
                     "application/json"
                 ],
@@ -83,7 +83,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "現在のセッションを無効化します（未実装）",
+                "description": "現在のセッションを無効化します",
                 "produces": [
                     "application/json"
                 ],
@@ -1723,21 +1723,28 @@ const docTemplate = `{
                     "example": "550e8400-e29b-41d4-a716-446655440001"
                 },
                 "end_date": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2024-06-30T00:00:00Z"
                 },
                 "goal": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "バックエンド開発力向上"
                 },
                 "id": {
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "level": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "intermediate"
                 },
                 "name": {
                     "type": "string",
                     "example": "Aチーム"
+                },
+                "start_date": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
                 }
             }
         },

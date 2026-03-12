@@ -243,18 +243,22 @@ definitions:
         example: 550e8400-e29b-41d4-a716-446655440001
         type: string
       end_date:
+        example: "2024-06-30T00:00:00Z"
         type: string
       goal:
+        example: バックエンド開発力向上
         type: string
       id:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       level:
+        example: intermediate
         type: string
       name:
         example: Aチーム
         type: string
       start_date:
+        example: "2024-01-01T00:00:00Z"
         type: string
     type: object
   response.UserResponse:
@@ -283,7 +287,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: '[認証不要] メールアドレスとパスワードで認証し、JWTトークンを取得します（未実装）'
+      description: メールアドレスとパスワードで認証し、JWTトークンを取得します
       parameters:
       - description: ログイン情報
         in: body
@@ -321,7 +325,7 @@ paths:
       - auth
   /auth/logout:
     post:
-      description: 現在のセッションを無効化します（未実装）
+      description: 現在のセッションを無効化します
       produces:
       - application/json
       responses:
