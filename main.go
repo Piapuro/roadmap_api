@@ -1,11 +1,22 @@
+// Package main is the entry point of the Roadmap API server.
 package main
 
 import (
 	"log"
 
-	"github.com/your-name/roadmap/api/dicontainer"
+	"github.com/Piapuro/roadmap_api/dicontainer"
+	_ "github.com/Piapuro/roadmap_api/docs"
 )
 
+// @title           Roadmap API
+// @version         1.0
+// @description     チーム開発ロードマップ生成API
+// @host            localhost:8080
+// @BasePath        /
+// @securityDefinitions.apikey BearerAuth
+// @in              header
+// @name            Authorization
+// @description     "Bearer {Supabase JWT token}" の形式で入力してください
 func main() {
 	container, err := dicontainer.New()
 	if err != nil {

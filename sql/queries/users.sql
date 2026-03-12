@@ -17,6 +17,25 @@ SET name = $2, updated_at = NOW()
 WHERE id = $1
 RETURNING *;
 
+-- name: UpdateUserProfile :one
+UPDATE users
+SET skill_level = $2, bio = $3, updated_at = NOW()
+WHERE id = $1
+RETURNING *;
+
+-- name: ListUserSkills :many
+SELECT * FROM user_skills
+WHERE user_id = $1
+ORDER BY created_at;
+
+-- name: DeleteUserSkills :exec
+DELETE FROM user_skills
+WHERE user_id = $1;
+
+-- name: CreateUserSkill :one
+INSERT INTO user_skills (user_id, skill_name, experience_years, is_learning_goal)
+VALUES ($1, $2, $3, $4)
+RETURNING *;
 -- name: AssignGlobalRole :exec
 INSERT INTO user_global_roles (user_id, global_role_id)
 VALUES ($1, $2)

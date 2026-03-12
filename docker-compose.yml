@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   api:
     build:
@@ -6,8 +8,8 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - .:/app                  # ソースをマウント（Air がホットリロード）
-      - go_cache:/root/.cache   # ビルドキャッシュ保持
+      - .:/app
+      - go_cache:/root/go/pkg/mod
     env_file:
       - .env.local
     depends_on:
@@ -40,6 +42,7 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
     networks:
@@ -56,6 +59,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    restart: on-failure
     networks:
       - app-network
 

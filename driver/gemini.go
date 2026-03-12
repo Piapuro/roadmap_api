@@ -3,17 +3,11 @@ package driver
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"google.golang.org/genai"
 )
 
-func NewGeminiClient(ctx context.Context) (*genai.Client, error) {
-	apiKey := os.Getenv("GEMINI_API_KEY")
-	if apiKey == "" {
-		return nil, fmt.Errorf("GEMINI_API_KEY is not set")
-	}
-
+func NewGeminiClient(ctx context.Context, apiKey string) (*genai.Client, error) {
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey:  apiKey,
 		Backend: genai.BackendGeminiAPI,

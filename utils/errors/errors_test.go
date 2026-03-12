@@ -8,7 +8,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
-	apperrors "github.com/your-name/roadmap/api/utils/errors"
+	apperrors "github.com/Piapuro/roadmap_api/utils/errors"
 	"go.uber.org/zap"
 )
 

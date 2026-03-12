@@ -8,6 +8,7 @@ package query
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
@@ -56,6 +57,48 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const createUserSkill = `-- name: CreateUserSkill :one
+INSERT INTO user_skills (user_id, skill_name, experience_years, is_learning_goal)
+VALUES ($1, $2, $3, $4)
+RETURNING id, user_id, skill_name, experience_years, is_learning_goal, created_at
+`
+
+type CreateUserSkillParams struct {
+	UserID          uuid.UUID
+	SkillName       string
+	ExperienceYears sql.NullString
+	IsLearningGoal  bool
+}
+
+func (q *Queries) CreateUserSkill(ctx context.Context, arg CreateUserSkillParams) (UserSkill, error) {
+	row := q.db.QueryRowContext(ctx, createUserSkill,
+		arg.UserID,
+		arg.SkillName,
+		arg.ExperienceYears,
+		arg.IsLearningGoal,
+	)
+	var i UserSkill
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.SkillName,
+		&i.ExperienceYears,
+		&i.IsLearningGoal,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const deleteUserSkills = `-- name: DeleteUserSkills :exec
+DELETE FROM user_skills
+WHERE user_id = $1
+`
+
+func (q *Queries) DeleteUserSkills(ctx context.Context, userID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteUserSkills, userID)
+	return err
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT id, email, name, password_hash, avatar_url, bio, skill_level, created_at, updated_at FROM users
 WHERE email = $1
@@ -100,6 +143,42 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 	return i, err
 }
 
+const listUserSkills = `-- name: ListUserSkills :many
+SELECT id, user_id, skill_name, experience_years, is_learning_goal, created_at FROM user_skills
+WHERE user_id = $1
+ORDER BY created_at
+`
+
+func (q *Queries) ListUserSkills(ctx context.Context, userID uuid.UUID) ([]UserSkill, error) {
+	rows, err := q.db.QueryContext(ctx, listUserSkills, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UserSkill
+	for rows.Next() {
+		var i UserSkill
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.SkillName,
+			&i.ExperienceYears,
+			&i.IsLearningGoal,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateUser = `-- name: UpdateUser :one
 UPDATE users
 SET name = $2, updated_at = NOW()
@@ -114,6 +193,36 @@ type UpdateUserParams struct {
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
 	row := q.db.QueryRowContext(ctx, updateUser, arg.ID, arg.Name)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.PasswordHash,
+		&i.AvatarUrl,
+		&i.Bio,
+		&i.SkillLevel,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateUserProfile = `-- name: UpdateUserProfile :one
+UPDATE users
+SET skill_level = $2, bio = $3, updated_at = NOW()
+WHERE id = $1
+RETURNING id, email, name, password_hash, avatar_url, bio, skill_level, created_at, updated_at
+`
+
+type UpdateUserProfileParams struct {
+	ID         uuid.UUID
+	SkillLevel string
+	Bio        sql.NullString
+}
+
+func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, updateUserProfile, arg.ID, arg.SkillLevel, arg.Bio)
 	var i User
 	err := row.Scan(
 		&i.ID,
