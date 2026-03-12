@@ -19,6 +19,17 @@ func NewUserAdapter(q *query.Queries, db *sql.DB) *UserAdapter {
 	return &UserAdapter{q: q, db: db}
 }
 
+func (a *UserAdapter) GetMe(ctx context.Context, userID uuid.UUID) (query.User, error) {
+	return a.q.GetUserByID(ctx, userID)
+}
+
+func (a *UserAdapter) UpdateMe(ctx context.Context, userID uuid.UUID, name string) (query.User, error) {
+	return a.q.UpdateUserName(ctx, query.UpdateUserNameParams{
+		ID:   userID,
+		Name: name,
+	})
+}
+
 func (a *UserAdapter) GetMySkills(ctx context.Context, userID uuid.UUID) (query.User, []query.UserSkill, error) {
 	user, err := a.q.GetUserByID(ctx, userID)
 	if err != nil {
