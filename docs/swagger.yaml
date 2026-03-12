@@ -201,6 +201,27 @@ definitions:
           $ref: '#/definitions/response.UserSkillResponse'
         type: array
     type: object
+  response.ProfileResponse:
+    properties:
+      avatar_url:
+        example: https://example.com/avatar.png
+        type: string
+      bio:
+        example: Goエンジニア
+        type: string
+      created_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: 山田太郎
+        type: string
+      skill_level:
+        example: beginner
+        type: string
+    type: object
   response.RequirementResponse:
     properties:
       created_at:
@@ -1106,15 +1127,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.UserResponse'
+            $ref: '#/definitions/response.ProfileResponse'
         "401":
           description: Unauthorized
           schema:
             additionalProperties:
               type: string
             type: object
-        "403":
-          description: Forbidden
+        "404":
+          description: Not Found
           schema:
             additionalProperties:
               type: string
@@ -1133,7 +1154,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: ログイン中のユーザー情報を更新します
+      description: ログイン中のユーザーの名前を更新します
       parameters:
       - description: 更新情報
         in: body
@@ -1147,7 +1168,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.UserResponse'
+            $ref: '#/definitions/response.ProfileResponse'
         "400":
           description: Bad Request
           schema:
@@ -1160,8 +1181,8 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "403":
-          description: Forbidden
+        "404":
+          description: Not Found
           schema:
             additionalProperties:
               type: string

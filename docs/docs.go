@@ -1213,7 +1213,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.UserResponse"
+                            "$ref": "#/definitions/response.ProfileResponse"
                         }
                     },
                     "401": {
@@ -1225,8 +1225,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "403": {
-                        "description": "Forbidden",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1251,7 +1251,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "ログイン中のユーザー情報を更新します",
+                "description": "ログイン中のユーザーの名前を更新します",
                 "consumes": [
                     "application/json"
                 ],
@@ -1277,7 +1277,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.UserResponse"
+                            "$ref": "#/definitions/response.ProfileResponse"
                         }
                     },
                     "400": {
@@ -1298,8 +1298,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "403": {
-                        "description": "Forbidden",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1790,6 +1790,35 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/response.UserSkillResponse"
                     }
+                }
+            }
+        },
+        "response.ProfileResponse": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "https://example.com/avatar.png"
+                },
+                "bio": {
+                    "type": "string",
+                    "example": "Goエンジニア"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "山田太郎"
+                },
+                "skill_level": {
+                    "type": "string",
+                    "example": "beginner"
                 }
             }
         },
