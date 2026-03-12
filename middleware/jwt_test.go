@@ -26,6 +26,7 @@ func makeToken(t testing.TB, secret string, sub string, exp time.Time) string {
 	claims := jwt.RegisteredClaims{
 		Subject:   sub,
 		ExpiresAt: jwt.NewNumericDate(exp),
+		Audience:  jwt.ClaimStrings{"authenticated"},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signed, err := token.SignedString([]byte(secret))
