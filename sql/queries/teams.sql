@@ -47,3 +47,8 @@ SELECT EXISTS(
 INSERT INTO user_team_roles (user_id, team_id, team_role_id)
 VALUES ($1, $2, 1)
 ON CONFLICT DO NOTHING;
+
+-- name: AssignTeamOwner :exec
+INSERT INTO user_team_roles (user_id, team_id, team_role_id)
+VALUES ($1, $2, $3)
+ON CONFLICT DO NOTHING;

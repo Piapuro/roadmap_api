@@ -31,7 +31,7 @@ func (a *TeamAdapter) IssueInviteToken(ctx context.Context, teamID uuid.UUID, to
 }
 
 func (a *TeamAdapter) GetTeamByInviteToken(ctx context.Context, token string) (query.Team, error) {
-	team, err := a.q.GetTeamByInviteToken(ctx, token)
+	team, err := a.q.GetTeamByInviteToken(ctx, sql.NullString{String: token, Valid: true})
 	if err != nil {
 		return query.Team{}, fmt.Errorf("get team by invite token: %w", err)
 	}
@@ -39,7 +39,7 @@ func (a *TeamAdapter) GetTeamByInviteToken(ctx context.Context, token string) (q
 }
 
 func (a *TeamAdapter) IsTeamOwner(ctx context.Context, userID uuid.UUID, teamID uuid.UUID) (bool, error) {
-	isOwner, err := a.q.IsTeamOwner(ctx, userID, teamID)
+	isOwner, err := a.q.IsTeamOwner(ctx, query.IsTeamOwnerParams{UserID: userID, TeamID: teamID})
 	if err != nil {
 		return false, fmt.Errorf("check team owner: %w", err)
 	}
@@ -47,7 +47,7 @@ func (a *TeamAdapter) IsTeamOwner(ctx context.Context, userID uuid.UUID, teamID 
 }
 
 func (a *TeamAdapter) IsTeamMember(ctx context.Context, userID uuid.UUID, teamID uuid.UUID) (bool, error) {
-	isMember, err := a.q.IsTeamMember(ctx, userID, teamID)
+	isMember, err := a.q.IsTeamMember(ctx, query.IsTeamMemberParams{UserID: userID, TeamID: teamID})
 	if err != nil {
 		return false, fmt.Errorf("check team member: %w", err)
 	}
@@ -55,7 +55,7 @@ func (a *TeamAdapter) IsTeamMember(ctx context.Context, userID uuid.UUID, teamID
 }
 
 func (a *TeamAdapter) JoinTeamAsMember(ctx context.Context, userID uuid.UUID, teamID uuid.UUID) error {
-	if err := a.q.JoinTeamAsMember(ctx, userID, teamID); err != nil {
+	if err := a.q.JoinTeamAsMember(ctx, query.JoinTeamAsMemberParams{UserID: userID, TeamID: teamID}); err != nil {
 		return fmt.Errorf("join team as member: %w", err)
 	}
 	return nil

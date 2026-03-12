@@ -7,3 +7,5 @@ sql:
       go:
         package: "query"
         out: "query"
+        rename:
+          UserProfile: "User"

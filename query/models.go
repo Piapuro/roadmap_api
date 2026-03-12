@@ -243,9 +243,13 @@ type TechStack struct {
 	CreatedAt time.Time
 }
 
-// User は public.user_profiles テーブルに対応する。
-// メールアドレス・パスワードは Supabase Auth (auth.users) が管理するため含まない。
-type User struct {
+type UserGlobalRole struct {
+	UserID       uuid.UUID
+	GlobalRoleID int16
+	GrantedAt    time.Time
+}
+
+type UserProfile struct {
 	ID         uuid.UUID
 	Name       string
 	AvatarUrl  sql.NullString
@@ -253,12 +257,6 @@ type User struct {
 	SkillLevel string
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
-}
-
-type UserGlobalRole struct {
-	UserID       uuid.UUID
-	GlobalRoleID int16
-	GrantedAt    time.Time
 }
 
 type UserSkill struct {
