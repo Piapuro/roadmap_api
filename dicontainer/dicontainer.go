@@ -97,7 +97,7 @@ func New() (*Container, error) {
 	}
 
 	// Routes
-	router.RegisterAuthRoutes(e, authController)
+	router.RegisterAuthRoutes(e, authController, auth)
 	router.RegisterUserRoutes(e, userController, auth)
 	router.RegisterTeamRoutes(e, teamController, auth)
 	router.RegisterRequirementRoutes(e, requirementController, auth)
