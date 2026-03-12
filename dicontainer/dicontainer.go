@@ -1,6 +1,8 @@
 package dicontainer
 
 import (
+	"os"
+
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/Piapuro/roadmap_api/adapter"
@@ -11,7 +13,6 @@ import (
 	"github.com/Piapuro/roadmap_api/query"
 	"github.com/Piapuro/roadmap_api/router"
 	"github.com/Piapuro/roadmap_api/service"
-	apperrors "github.com/Piapuro/roadmap_api/utils/errors"
 	"github.com/Piapuro/roadmap_api/utils"
 	apperrors "github.com/Piapuro/roadmap_api/utils/errors"
 	echoSwagger "github.com/swaggo/echo-swagger"
@@ -69,7 +70,10 @@ func New() (*Container, error) {
 	teamController := controller.NewTeamController(teamService)
 	requirementController := controller.NewRequirementController(requirementService)
 	roadmapController := controller.NewRoadmapController(roadmapService)
-	webhookController := controller.NewWebhookController(webhookAdapter, os.Getenv("WEBHOOK_SECRET"))
+	webhookController, err := controller.NewWebhookController(webhookAdapter, os.Getenv("WEBHOOK_SECRET"))
+	if err != nil {
+		return nil, err
+	}
 	skillController := controller.NewSkillController()
 
 	// Middleware
@@ -99,6 +103,7 @@ func New() (*Container, error) {
 	router.RegisterRequirementRoutes(e, requirementController, auth)
 	router.RegisterRoadmapRoutes(e, roadmapController, auth)
 	router.RegisterWebhookRoutes(e, webhookController)
+	router.RegisterSkillRoutes(e, skillController)
 
 	return &Container{echo: e, port: cfg.Port}, nil
 }
