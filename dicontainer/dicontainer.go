@@ -13,6 +13,7 @@ import (
 	"github.com/Piapuro/roadmap_api/service"
 	apperrors "github.com/Piapuro/roadmap_api/utils/errors"
 	"github.com/Piapuro/roadmap_api/utils"
+	apperrors "github.com/Piapuro/roadmap_api/utils/errors"
 	echoSwagger "github.com/swaggo/echo-swagger"
 	"go.uber.org/zap"
 )
@@ -55,13 +56,12 @@ func New() (*Container, error) {
 	aiAdapter := adapter.NewAIAdapter()
 
 	// Services
-	authService := service.NewAuthService(supabaseCfg.URL, supabaseCfg.AnonKey)
+	authService := service.NewAuthService(supabaseCfg.URL, supabaseCfg.AnonKey, nil)
 	userService := service.NewUserService(userAdapter)
 	teamService := service.NewTeamService(teamAdapter)
 	requirementService := service.NewRequirementService(requirementAdapter)
-	aiService := service.NewAIService(aiAdapter)
+	// TODO: inject aiService into a controller once the AI feature is implemented
 	roadmapService := service.NewRoadmapService(aiAdapter)
-	_ = aiService
 
 	// Controllers
 	authController := controller.NewAuthController(authService)
@@ -69,10 +69,8 @@ func New() (*Container, error) {
 	teamController := controller.NewTeamController(teamService)
 	requirementController := controller.NewRequirementController(requirementService)
 	roadmapController := controller.NewRoadmapController(roadmapService)
-	webhookController, err := controller.NewWebhookController(webhookAdapter, cfg.WebhookSecret)
-	if err != nil {
-		return nil, err
-	}
+	webhookController := controller.NewWebhookController(webhookAdapter, os.Getenv("WEBHOOK_SECRET"))
+	skillController := controller.NewSkillController()
 
 	// Middleware
 	auth := middleware.NewSupabaseAuth(supabaseCfg.JWTSecret, supabaseCfg.URL+"/auth/v1")

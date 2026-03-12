@@ -1,6 +1,7 @@
 package middleware_test
 
 import (
+	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,6 +11,13 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/Piapuro/roadmap_api/middleware"
 )
+
+// makeNoneToken constructs a JWT with alg:none (no signature) for security testing.
+func makeNoneToken(sub string) string {
+	header := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"none","typ":"JWT"}`))
+	payload := base64.RawURLEncoding.EncodeToString([]byte(`{"sub":"` + sub + `","exp":9999999999}`))
+	return header + "." + payload + "."
+}
 
 const testSecret = "test-secret-key"
 
@@ -56,6 +64,11 @@ func TestVerify(t *testing.T) {
 		{
 			name:       "期限切れJWT",
 			authHeader: "Bearer " + makeToken(t, testSecret, "user-uuid", time.Now().Add(-time.Hour)),
+			wantStatus: http.StatusUnauthorized,
+		},
+		{
+			name:       "アルゴリズムnone攻撃",
+			authHeader: "Bearer " + makeNoneToken("user-uuid"),
 			wantStatus: http.StatusUnauthorized,
 		},
 	}

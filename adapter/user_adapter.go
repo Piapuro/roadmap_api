@@ -42,7 +42,7 @@ func (a *UserAdapter) UpsertSkills(ctx context.Context, userID uuid.UUID, skillL
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	qtx := a.q.WithTx(tx)
 
