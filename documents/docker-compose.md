@@ -226,7 +226,7 @@ flowchart TB
 
     subgraph SQLC["🔧 sqlc コード生成"]
         direction TB
-        Q1["# backend/db/queries/ に .sql クエリを追加後\ncd backend && sqlc generate\n# backend/db/sqlc/ にGoコードが自動生成される"]
+        Q1["# sql/queries/ に .sql クエリを追加後\nmake sqlc\n# query/ にGoコードが自動生成される\n# ⚠️ query/*.go は手動編集禁止（sqlcが上書きする）"]
     end
 
     subgraph RESET["🔄 DB リセット"]
