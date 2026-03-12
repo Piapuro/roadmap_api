@@ -112,7 +112,7 @@ func (c *UserController) GetMySkills(ctx echo.Context) error {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ctx.JSON(http.StatusNotFound, map[string]string{"error": "user not found"})
 		}
-		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 	}
 
 	return ctx.JSON(http.StatusOK, buildMySkillsResponse(user, skills))
@@ -153,7 +153,7 @@ func (c *UserController) UpsertMySkills(ctx echo.Context) error {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ctx.JSON(http.StatusNotFound, map[string]string{"error": "user not found"})
 		}
-		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 	}
 
 	return ctx.JSON(http.StatusOK, buildMySkillsResponse(user, skills))

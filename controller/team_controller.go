@@ -52,7 +52,7 @@ func (c *TeamController) CreateTeam(ctx echo.Context) error {
 
 	resp, err := c.teamService.CreateTeam(ctx.Request().Context(), userID, req)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 	}
 
 	return ctx.JSON(http.StatusCreated, resp)

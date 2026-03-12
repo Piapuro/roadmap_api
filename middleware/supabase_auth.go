@@ -128,28 +128,31 @@ func (m *SupabaseAuth) Verify(next echo.HandlerFunc) echo.HandlerFunc {
 		token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
 			switch t.Method.(type) {
 			case *jwt.SigningMethodHMAC:
-				// HS256: 共有シークレットで検証
 				return m.jwtSecret, nil
 			case *jwt.SigningMethodECDSA:
-				// ES256: JWKS から取得した公開鍵で検証
 				kid, ok := t.Header["kid"].(string)
 				if !ok {
+					log.Printf("[SupabaseAuth] ES256 token has no kid header")
 					return nil, echo.ErrUnauthorized
 				}
 				pub, found := m.ecKeys[kid]
 				if !found {
+					log.Printf("[SupabaseAuth] kid=%s not found in cache (cached keys: %d)", kid, len(m.ecKeys))
 					return nil, echo.ErrUnauthorized
 				}
 				return pub, nil
 			default:
+				log.Printf("[SupabaseAuth] unsupported alg: %s", t.Method.Alg())
 				return nil, echo.ErrUnauthorized
 			}
-		}, jwt.WithExpirationRequired())
+		}, jwt.WithExpirationRequired(), jwt.WithAudience("authenticated"))
 		if err != nil || !token.Valid {
+			log.Printf("[SupabaseAuth] token parse failed: %v", err)
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid token"})
 		}
 
 		if m.issuer != "" && claims.Issuer != m.issuer {
+			log.Printf("[SupabaseAuth] issuer mismatch: got=%q want=%q", claims.Issuer, m.issuer)
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid token"})
 		}
 
