@@ -12,6 +12,7 @@ import (
 	"github.com/Piapuro/roadmap_api/query"
 	"github.com/Piapuro/roadmap_api/router"
 	"github.com/Piapuro/roadmap_api/service"
+	apperrors "github.com/Piapuro/roadmap_api/utils/errors"
 	"github.com/Piapuro/roadmap_api/utils"
 	apperrors "github.com/Piapuro/roadmap_api/utils/errors"
 	echoSwagger "github.com/swaggo/echo-swagger"
@@ -52,13 +53,12 @@ func New() (*Container, error) {
 	aiAdapter := adapter.NewAIAdapter()
 
 	// Services
-	authService := service.NewAuthService()
+	authService := service.NewAuthService(supabaseCfg.URL, supabaseCfg.AnonKey, nil)
 	userService := service.NewUserService(userAdapter)
 	teamService := service.NewTeamService(teamAdapter)
 	requirementService := service.NewRequirementService(requirementAdapter)
-	aiService := service.NewAIService(aiAdapter)
+	// TODO: inject aiService into a controller once the AI feature is implemented
 	roadmapService := service.NewRoadmapService(aiAdapter)
-	_ = aiService
 
 	// Controllers
 	authController := controller.NewAuthController(authService)
@@ -96,7 +96,6 @@ func New() (*Container, error) {
 	router.RegisterRequirementRoutes(e, requirementController, auth)
 	router.RegisterRoadmapRoutes(e, roadmapController, auth)
 	router.RegisterWebhookRoutes(e, webhookController)
-	router.RegisterSkillRoutes(e, skillController)
 
 	return &Container{echo: e}, nil
 }

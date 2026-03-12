@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/auth/login": {
             "post": {
-                "description": "メールアドレスとパスワードで認証し、JWTトークンを取得します",
+                "description": "[認証不要] メールアドレスとパスワードで認証し、JWTトークンを取得します（未実装）",
                 "consumes": [
                     "application/json"
                 ],
@@ -43,10 +43,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/response.LoginResponse"
                         }
                     },
                     "400": {
@@ -86,7 +83,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "現在のセッションを無効化します",
+                "description": "現在のセッションを無効化します（未実装）",
                 "produces": [
                     "application/json"
                 ],
@@ -153,10 +150,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/response.SignUpResponse"
                         }
                     },
                     "400": {
@@ -243,6 +237,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -288,6 +291,15 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -375,6 +387,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -429,6 +450,15 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -500,6 +530,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -564,6 +603,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -609,6 +657,15 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -696,6 +753,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -742,6 +808,15 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -797,6 +872,15 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -868,6 +952,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -913,6 +1006,15 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1000,6 +1102,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -1046,6 +1157,15 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1105,6 +1225,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -1149,6 +1278,77 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/webhooks/supabase/user-created": {
+            "post": {
+                "description": "Supabase auth.users INSERT 時に LOGIN_USER グローバルロールを付与する",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "webhooks"
+                ],
+                "summary": "ユーザー作成Webhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Webhook署名シークレット",
+                        "name": "x-webhook-secret",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "400": {
@@ -1353,7 +1553,9 @@ const docTemplate = `{
                 "title"
             ],
             "properties": {
-                "content": {},
+                "content": {
+                    "type": "object"
+                },
                 "title": {
                     "type": "string",
                     "example": "ECサイト開発ロードマップ v2"
@@ -1384,41 +1586,75 @@ const docTemplate = `{
                 }
             }
         },
+        "response.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/response.UserResponse"
+                }
+            }
+        },
         "response.RequirementResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
                 },
                 "difficulty_level": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 2
                 },
                 "features": {
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "ログイン機能",
+                        "商品一覧",
+                        "カート機能"
+                    ]
                 },
                 "free_text": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ECサイトを作りたい"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "product_type": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "web"
                 },
                 "status": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "draft"
                 },
                 "supplement_url": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "https://example.com/spec"
                 },
                 "team_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
                 },
                 "updated_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
                 }
             }
         },
@@ -1426,25 +1662,52 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "confirmed_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2024-06-01T00:00:00Z"
                 },
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "requirement_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440002"
                 },
                 "status": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "draft"
                 },
                 "team_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
                 },
                 "updated_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "response.SignUpResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
                     "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/response.UserResponse"
                 }
             }
         },
@@ -1452,10 +1715,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
                 },
                 "created_by": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
                 },
                 "end_date": {
                     "type": "string"
@@ -1464,16 +1729,15 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "level": {
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
-                },
-                "start_date": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Aチーム"
                 }
             }
         },
@@ -1481,16 +1745,20 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
                 },
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "user@example.com"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "山田太郎"
                 }
             }
         }

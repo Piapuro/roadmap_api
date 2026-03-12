@@ -8,7 +8,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
-	apperrors "github.com/your-name/roadmap/api/utils/errors"
+	"github.com/stretchr/testify/require"
+	apperrors "github.com/Piapuro/roadmap_api/utils/errors"
 	"go.uber.org/zap"
 )
 
@@ -21,28 +22,31 @@ func newContext() (echo.Context, *httptest.ResponseRecorder) {
 
 func TestErrUnauthorized(t *testing.T) {
 	c, rec := newContext()
-	_ = apperrors.ErrUnauthorized.JSON(c)
+	err := apperrors.ErrUnauthorized.JSON(c)
+	require.NoError(t, err)
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 	var res apperrors.ErrorResponse
-	_ = json.Unmarshal(rec.Body.Bytes(), &res)
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &res))
 	assert.Equal(t, "UNAUTHORIZED", res.Code)
 }
 
 func TestErrForbidden(t *testing.T) {
 	c, rec := newContext()
-	_ = apperrors.ErrForbidden.JSON(c)
+	err := apperrors.ErrForbidden.JSON(c)
+	require.NoError(t, err)
 	assert.Equal(t, http.StatusForbidden, rec.Code)
 	var res apperrors.ErrorResponse
-	_ = json.Unmarshal(rec.Body.Bytes(), &res)
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &res))
 	assert.Equal(t, "FORBIDDEN", res.Code)
 }
 
 func TestErrNotFound(t *testing.T) {
 	c, rec := newContext()
-	_ = apperrors.ErrNotFound.JSON(c)
+	err := apperrors.ErrNotFound.JSON(c)
+	require.NoError(t, err)
 	assert.Equal(t, http.StatusNotFound, rec.Code)
 	var res apperrors.ErrorResponse
-	_ = json.Unmarshal(rec.Body.Bytes(), &res)
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &res))
 	assert.Equal(t, "NOT_FOUND", res.Code)
 }
 
@@ -58,7 +62,7 @@ func TestUnknownError_Returns500(t *testing.T) {
 	handler(assert.AnError, c)
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 	var res apperrors.ErrorResponse
-	_ = json.Unmarshal(rec.Body.Bytes(), &res)
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &res))
 	assert.Equal(t, "INTERNAL_ERROR", res.Code)
 }
 
