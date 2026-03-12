@@ -61,6 +61,17 @@ func (c *UserController) UpdateMe(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, nil)
 }
 
+// GetMySkills godoc
+// @Summary      スキル・技術一覧取得
+// @Description  ログイン中のユーザーのスキルレベル・bio・スキル一覧を返します
+// @Tags         users
+// @Produce      json
+// @Success      200  {object}  response.MySkillsResponse
+// @Failure      401  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /users/me/skills [get]
 func (c *UserController) GetMySkills(ctx echo.Context) error {
 	userID, err := parseUserID(ctx)
 	if err != nil {
@@ -79,6 +90,20 @@ func (c *UserController) GetMySkills(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, buildMySkillsResponse(user, skills))
 }
 
+// UpsertMySkills godoc
+// @Summary      スキル・技術登録（新規登録・更新）
+// @Description  スキルレベル・bio・スキル一覧を登録または上書き更新します。新規登録後のオンボーディング画面から呼び出します。
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        body  body      requests.UpsertSkillsRequest  true  "スキル情報"
+// @Success      200   {object}  response.MySkillsResponse
+// @Failure      400   {object}  map[string]string
+// @Failure      401   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /users/me/skills [put]
 func (c *UserController) UpsertMySkills(ctx echo.Context) error {
 	userID, err := parseUserID(ctx)
 	if err != nil {

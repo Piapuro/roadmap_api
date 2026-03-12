@@ -243,16 +243,16 @@ type TechStack struct {
 	CreatedAt time.Time
 }
 
+// User は public.user_profiles テーブルに対応する。
+// メールアドレス・パスワードは Supabase Auth (auth.users) が管理するため含まない。
 type User struct {
-	ID           uuid.UUID
-	Email        string
-	Name         string
-	PasswordHash sql.NullString
-	AvatarUrl    sql.NullString
-	Bio          sql.NullString
-	SkillLevel   string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID         uuid.UUID
+	Name       string
+	AvatarUrl  sql.NullString
+	Bio        sql.NullString
+	SkillLevel string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 type UserGlobalRole struct {
