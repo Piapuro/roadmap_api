@@ -1,11 +1,10 @@
 package dicontainer
 
 import (
-	"os"
-
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/Piapuro/roadmap_api/adapter"
+	"github.com/Piapuro/roadmap_api/config"
 	"github.com/Piapuro/roadmap_api/controller"
 	"github.com/Piapuro/roadmap_api/driver"
 	"github.com/Piapuro/roadmap_api/middleware"
@@ -21,9 +20,16 @@ import (
 
 type Container struct {
 	echo *echo.Echo
+	port string
 }
 
 func New() (*Container, error) {
+	// Config（未設定の必須環境変数があれば即エラー）
+	cfg, err := config.Load()
+	if err != nil {
+		return nil, err
+	}
+
 	// Logger
 	logger, err := zap.NewProduction()
 	if err != nil {
@@ -31,16 +37,13 @@ func New() (*Container, error) {
 	}
 
 	// DB
-	db, err := driver.NewPostgresDB()
+	db, err := driver.NewPostgresDB(cfg.DatabaseURL)
 	if err != nil {
 		return nil, err
 	}
 
 	// Supabase config
-	supabaseCfg, err := driver.NewSupabaseConfig()
-	if err != nil {
-		return nil, err
-	}
+	supabaseCfg := driver.NewSupabaseConfig(cfg.SupabaseURL, cfg.SupabaseAnonKey, cfg.SupabaseJWTSecret)
 
 	// sqlc queries
 	q := query.New(db)
@@ -85,7 +88,7 @@ func New() (*Container, error) {
 	})
 
 	// Swagger UI（本番環境では無効化）
-	if os.Getenv("APP_ENV") != "production" {
+	if !cfg.IsProduction() {
 		e.GET("/swagger/*", echoSwagger.WrapHandler)
 	}
 
@@ -97,9 +100,9 @@ func New() (*Container, error) {
 	router.RegisterRoadmapRoutes(e, roadmapController, auth)
 	router.RegisterWebhookRoutes(e, webhookController)
 
-	return &Container{echo: e}, nil
+	return &Container{echo: e, port: cfg.Port}, nil
 }
 
 func (c *Container) Run() error {
-	return c.echo.Start(":8080")
+	return c.echo.Start(":" + c.port)
 }
