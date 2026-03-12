@@ -12,8 +12,6 @@ import (
 	"github.com/Piapuro/roadmap_api/service"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/Piapuro/roadmap_api/requests"
-	"github.com/Piapuro/roadmap_api/service"
 )
 
 type UserController struct {
