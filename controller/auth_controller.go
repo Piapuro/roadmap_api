@@ -37,7 +37,7 @@ func (c *AuthController) SignUp(ctx echo.Context) error {
 	if err := ctx.Validate(&req); err != nil {
 		return ctx.JSON(400, map[string]string{"error": err.Error()})
 	}
-	res, err := c.authService.SignUp(req.Email, req.Password, req.Name)
+	res, err := c.authService.SignUp(ctx.Request().Context(), req.Email, req.Password, req.Name)
 	if err != nil {
 		if errors.Is(err, service.ErrEmailAlreadyExists) {
 			return ctx.JSON(http.StatusConflict, map[string]string{"error": "email already registered"})

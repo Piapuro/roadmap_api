@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,15 +17,25 @@ import (
 // ErrEmailAlreadyExists はメールアドレスが既に登録済みの場合に返されるエラー
 var ErrEmailAlreadyExists = errors.New("email already exists")
 
+// HTTPClient is an interface for making HTTP requests, enabling test injection.
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
 type AuthService struct {
 	supabaseURL     string
 	supabaseAnonKey string
+	httpClient      HTTPClient
 }
 
-func NewAuthService(supabaseURL, supabaseAnonKey string) *AuthService {
+func NewAuthService(supabaseURL, supabaseAnonKey string, httpClient HTTPClient) *AuthService {
+	if httpClient == nil {
+		httpClient = &http.Client{Timeout: 30 * time.Second}
+	}
 	return &AuthService{
 		supabaseURL:     supabaseURL,
 		supabaseAnonKey: supabaseAnonKey,
+		httpClient:      httpClient,
 	}
 }
 
@@ -46,7 +57,7 @@ type supabaseSignUpResponse struct {
 	} `json:"user"`
 }
 
-func (s *AuthService) SignUp(email, password, name string) (*response.SignUpResponse, error) {
+func (s *AuthService) SignUp(ctx context.Context, email, password, name string) (*response.SignUpResponse, error) {
 	body, err := json.Marshal(supabaseSignUpRequest{
 		Email:    email,
 		Password: password,
@@ -57,14 +68,14 @@ func (s *AuthService) SignUp(email, password, name string) (*response.SignUpResp
 	}
 
 	baseURL := strings.TrimSuffix(s.supabaseURL, "/")
-	req, err := http.NewRequest(http.MethodPost, baseURL+"/auth/v1/signup", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL+"/auth/v1/signup", bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("apikey", s.supabaseAnonKey)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call supabase: %w", err)
 	}
@@ -72,7 +83,10 @@ func (s *AuthService) SignUp(email, password, name string) (*response.SignUpResp
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		var errBody map[string]interface{}
-		json.NewDecoder(resp.Body).Decode(&errBody)
+		if decodeErr := json.NewDecoder(resp.Body).Decode(&errBody); decodeErr != nil {
+			log.Printf("[AuthService] Supabase signup error: status=%d (failed to decode body: %v)", resp.StatusCode, decodeErr)
+			return nil, fmt.Errorf("supabase error: status %d", resp.StatusCode)
+		}
 		log.Printf("[AuthService] Supabase signup error: status=%d body=%v", resp.StatusCode, errBody)
 		if code, ok := errBody["error_code"].(string); ok && code == "user_already_exists" {
 			return nil, ErrEmailAlreadyExists

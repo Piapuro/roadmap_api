@@ -52,13 +52,12 @@ func New() (*Container, error) {
 	aiAdapter := adapter.NewAIAdapter()
 
 	// Services
-	authService := service.NewAuthService(supabaseCfg.URL, supabaseCfg.AnonKey)
+	authService := service.NewAuthService(supabaseCfg.URL, supabaseCfg.AnonKey, nil)
 	userService := service.NewUserService(userAdapter)
 	teamService := service.NewTeamService(teamAdapter)
 	requirementService := service.NewRequirementService(requirementAdapter)
-	aiService := service.NewAIService(aiAdapter)
+	// TODO: inject aiService into a controller once the AI feature is implemented
 	roadmapService := service.NewRoadmapService(aiAdapter)
-	_ = aiService
 
 	// Controllers
 	authController := controller.NewAuthController(authService)
