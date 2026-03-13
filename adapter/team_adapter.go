@@ -61,6 +61,14 @@ func (a *TeamAdapter) JoinTeamAsMember(ctx context.Context, userID uuid.UUID, te
 	return nil
 }
 
+func (a *TeamAdapter) ListTeamsByMember(ctx context.Context, userID uuid.UUID) ([]query.Team, error) {
+	teams, err := a.q.ListTeamsByMember(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("list teams by member: %w", err)
+	}
+	return teams, nil
+}
+
 func (a *TeamAdapter) ListTeamMembers(ctx context.Context, teamID uuid.UUID) ([]query.ListTeamMembersRow, error) {
 	members, err := a.q.ListTeamMembers(ctx, teamID)
 	if err != nil {

@@ -345,6 +345,51 @@ func (q *Queries) ListTeamsByCreatedBy(ctx context.Context, createdBy uuid.UUID)
 	return items, nil
 }
 
+const listTeamsByMember = `-- name: ListTeamsByMember :many
+SELECT t.id, t.name, t.goal, t.level, t.start_date, t.end_date, t.is_archived,
+       t.invite_token, t.invite_token_expires_at, t.created_by, t.created_at, t.updated_at
+FROM teams t
+JOIN user_team_roles utr ON utr.team_id = t.id
+WHERE utr.user_id = $1
+ORDER BY t.created_at DESC
+`
+
+func (q *Queries) ListTeamsByMember(ctx context.Context, userID uuid.UUID) ([]Team, error) {
+	rows, err := q.db.QueryContext(ctx, listTeamsByMember, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Team
+	for rows.Next() {
+		var i Team
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Goal,
+			&i.Level,
+			&i.StartDate,
+			&i.EndDate,
+			&i.IsArchived,
+			&i.InviteToken,
+			&i.InviteTokenExpiresAt,
+			&i.CreatedBy,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateTeam = `-- name: UpdateTeam :one
 UPDATE teams
 SET name = $2, updated_at = NOW()

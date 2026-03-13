@@ -71,8 +71,21 @@ func (c *TeamController) CreateTeam(ctx echo.Context) error {
 // @Security     BearerAuth
 // @Router       /teams [get]
 func (c *TeamController) GetTeams(ctx echo.Context) error {
-	// TODO: implement
-	return ctx.JSON(http.StatusOK, nil)
+	userIDStr, ok := ctx.Get(middleware.ContextKeyUserID).(string)
+	if !ok || userIDStr == "" {
+		return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	}
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid user id"})
+	}
+
+	teams, err := c.teamService.GetTeams(ctx.Request().Context(), userID)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	}
+
+	return ctx.JSON(http.StatusOK, teams)
 }
 
 // GetTeam godoc

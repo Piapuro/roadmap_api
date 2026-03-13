@@ -93,6 +93,28 @@ func (s *TeamService) JoinTeam(ctx context.Context, userID uuid.UUID, token stri
 	}, nil
 }
 
+func (s *TeamService) GetTeams(ctx context.Context, userID uuid.UUID) ([]response.TeamResponse, error) {
+	teams, err := s.teamAdapter.ListTeamsByMember(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]response.TeamResponse, 0, len(teams))
+	for _, t := range teams {
+		result = append(result, response.TeamResponse{
+			ID:        t.ID.String(),
+			Name:      t.Name,
+			Goal:      t.Goal,
+			Level:     t.Level,
+			StartDate: t.StartDate,
+			EndDate:   t.EndDate,
+			CreatedBy: t.CreatedBy.String(),
+			CreatedAt: t.CreatedAt,
+		})
+	}
+	return result, nil
+}
+
 func (s *TeamService) GetTeamMembers(ctx context.Context, requesterID uuid.UUID, teamID uuid.UUID) ([]response.TeamMemberResponse, error) {
 	isMember, err := s.teamAdapter.IsTeamMember(ctx, requesterID, teamID)
 	if err != nil {
