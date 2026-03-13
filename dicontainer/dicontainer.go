@@ -66,7 +66,7 @@ func New() (*Container, error) {
 	roadmapService := service.NewRoadmapService(aiAdapter)
 
 	// Controllers
-	authController := controller.NewAuthController(authService)
+	authController := controller.NewAuthController(authService, userService)
 	userController := controller.NewUserController(userService)
 	teamController := controller.NewTeamController(teamService)
 	requirementController := controller.NewRequirementController(requirementService)

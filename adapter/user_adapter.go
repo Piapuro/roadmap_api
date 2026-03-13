@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"unicode/utf8"
 
 	"github.com/Piapuro/roadmap_api/query"
 	"github.com/google/uuid"
@@ -17,6 +18,33 @@ type UserAdapter struct {
 
 func NewUserAdapter(q *query.Queries, db *sql.DB) *UserAdapter {
 	return &UserAdapter{q: q, db: db}
+}
+
+// EnsureUserExists は Supabase Auth で認証したユーザーを user_profiles に同期する。
+// ローカル DB 使用時、auth.users のトリガーが動かないため SignUp/Login 後に呼ぶ。
+func (a *UserAdapter) EnsureUserExists(ctx context.Context, userID uuid.UUID, name string) error {
+	tx, err := a.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	qtx := a.q.WithTx(tx)
+	if err := qtx.EnsureUser(ctx, query.EnsureUserParams{ID: userID, Name: truncateName(name)}); err != nil {
+		return fmt.Errorf("ensure user: %w", err)
+	}
+	if err := qtx.AssignGlobalRole(ctx, query.AssignGlobalRoleParams{UserID: userID, GlobalRoleID: int16(globalRoleLoginUser)}); err != nil {
+		return fmt.Errorf("assign role: %w", err)
+	}
+	return tx.Commit()
+}
+
+func truncateName(name string) string {
+	const maxLen = 20
+	if utf8.RuneCountInString(name) <= maxLen {
+		return name
+	}
+	return string([]rune(name)[:maxLen])
 }
 
 func (a *UserAdapter) GetMe(ctx context.Context, userID uuid.UUID) (query.UserProfile, error) {

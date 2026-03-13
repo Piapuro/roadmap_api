@@ -7,15 +7,17 @@ import (
 
 	"github.com/Piapuro/roadmap_api/requests"
 	"github.com/Piapuro/roadmap_api/service"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
 type AuthController struct {
 	authService *service.AuthService
+	userService *service.UserService
 }
 
-func NewAuthController(authService *service.AuthService) *AuthController {
-	return &AuthController{authService: authService}
+func NewAuthController(authService *service.AuthService, userService *service.UserService) *AuthController {
+	return &AuthController{authService: authService, userService: userService}
 }
 
 // SignUp godoc
@@ -44,6 +46,12 @@ func (c *AuthController) SignUp(ctx echo.Context) error {
 			return ctx.JSON(http.StatusConflict, map[string]string{"error": "email already registered"})
 		}
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	}
+	userID, err := uuid.Parse(res.User.ID)
+	if err != nil {
+		ctx.Logger().Errorf("SignUp: invalid user ID %q: %v", res.User.ID, err)
+	} else if err := c.userService.EnsureUserExists(ctx.Request().Context(), userID, req.Name, req.Email); err != nil {
+		ctx.Logger().Errorf("SignUp: EnsureUserExists failed for user %s: %v", userID, err)
 	}
 	return ctx.JSON(http.StatusCreated, res)
 }
@@ -74,6 +82,12 @@ func (c *AuthController) Login(ctx echo.Context) error {
 			return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid email or password"})
 		}
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	}
+	userID, err := uuid.Parse(res.User.ID)
+	if err != nil {
+		ctx.Logger().Errorf("Login: invalid user ID %q: %v", res.User.ID, err)
+	} else if err := c.userService.EnsureUserExists(ctx.Request().Context(), userID, res.User.Name, req.Email); err != nil {
+		ctx.Logger().Errorf("Login: EnsureUserExists failed for user %s: %v", userID, err)
 	}
 	return ctx.JSON(http.StatusOK, res)
 }

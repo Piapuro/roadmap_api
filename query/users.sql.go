@@ -70,6 +70,22 @@ func (q *Queries) DeleteUserSkills(ctx context.Context, userID uuid.UUID) error 
 	return err
 }
 
+const ensureUser = `-- name: EnsureUser :exec
+INSERT INTO user_profiles (id, name)
+VALUES ($1, $2)
+ON CONFLICT (id) DO NOTHING
+`
+
+type EnsureUserParams struct {
+	ID   uuid.UUID
+	Name string
+}
+
+func (q *Queries) EnsureUser(ctx context.Context, arg EnsureUserParams) error {
+	_, err := q.db.ExecContext(ctx, ensureUser, arg.ID, arg.Name)
+	return err
+}
+
 const getUserByID = `-- name: GetUserByID :one
 SELECT id, name, avatar_url, bio, skill_level, created_at, updated_at
 FROM user_profiles
