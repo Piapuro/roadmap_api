@@ -14,5 +14,6 @@ func RegisterTeamRoutes(e *echo.Echo, c *controller.TeamController, m *middlewar
 	g.GET("/:id", c.GetTeam)
 	g.PUT("/:id", c.UpdateTeam)
 	g.DELETE("/:id", c.DeleteTeam)
+	g.GET("/:id/members", c.GetTeamMembers)
 	g.POST("/:id/invite", c.IssueInviteToken)
 }

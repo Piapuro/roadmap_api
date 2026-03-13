@@ -17,10 +17,11 @@ import (
 )
 
 var (
-	ErrNotTeamOwner       = errors.New("not team owner")
-	ErrInviteTokenExpired = errors.New("invite token expired")
+	ErrNotTeamOwner        = errors.New("not team owner")
+	ErrInviteTokenExpired  = errors.New("invite token expired")
 	ErrInviteTokenNotFound = errors.New("invite token not found")
-	ErrAlreadyTeamMember  = errors.New("already team member")
+	ErrAlreadyTeamMember   = errors.New("already team member")
+	ErrNotTeamMember       = errors.New("not team member")
 )
 
 type TeamService struct {
@@ -90,6 +91,59 @@ func (s *TeamService) JoinTeam(ctx context.Context, userID uuid.UUID, token stri
 		UserID:   userID.String(),
 		JoinedAt: time.Now().UTC(),
 	}, nil
+}
+
+func (s *TeamService) GetTeamMembers(ctx context.Context, requesterID uuid.UUID, teamID uuid.UUID) ([]response.TeamMemberResponse, error) {
+	isMember, err := s.teamAdapter.IsTeamMember(ctx, requesterID, teamID)
+	if err != nil {
+		return nil, fmt.Errorf("check team member: %w", err)
+	}
+	if !isMember {
+		return nil, ErrNotTeamMember
+	}
+
+	members, err := s.teamAdapter.ListTeamMembers(ctx, teamID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]response.TeamMemberResponse, 0, len(members))
+	for _, m := range members {
+		skills, err := s.teamAdapter.ListUserSkills(ctx, m.ID)
+		if err != nil {
+			return nil, fmt.Errorf("list skills for user %s: %w", m.ID, err)
+		}
+
+		skillResp := make([]response.TeamMemberSkill, 0, len(skills))
+		for _, sk := range skills {
+			s := response.TeamMemberSkill{
+				SkillName:      sk.SkillName,
+				IsLearningGoal: sk.IsLearningGoal,
+			}
+			if sk.ExperienceYears.Valid {
+				s.ExperienceYears = &sk.ExperienceYears.String
+			}
+			skillResp = append(skillResp, s)
+		}
+
+		mem := response.TeamMemberResponse{
+			ID:         m.ID.String(),
+			Name:       m.Name,
+			SkillLevel: m.SkillLevel,
+			TeamRole:   m.TeamRoleName,
+			JoinedAt:   m.JoinedAt,
+			Skills:     skillResp,
+		}
+		if m.AvatarUrl.Valid {
+			mem.AvatarURL = &m.AvatarUrl.String
+		}
+		if m.FunctionalRole.Valid {
+			mem.FunctionalRole = &m.FunctionalRole.String
+		}
+		result = append(result, mem)
+	}
+
+	return result, nil
 }
 
 func (s *TeamService) CreateTeam(ctx context.Context, userID uuid.UUID, req requests.CreateTeamRequest) (response.TeamResponse, error) {

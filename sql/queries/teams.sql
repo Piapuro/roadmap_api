@@ -52,3 +52,19 @@ ON CONFLICT DO NOTHING;
 INSERT INTO user_team_roles (user_id, team_id, team_role_id)
 VALUES ($1, $2, $3)
 ON CONFLICT DO NOTHING;
+
+-- name: ListTeamMembers :many
+SELECT
+    up.id,
+    up.name,
+    up.avatar_url,
+    up.skill_level,
+    utr.team_role_id,
+    tr.name AS team_role_name,
+    utr.functional_role,
+    utr.joined_at
+FROM user_team_roles utr
+JOIN user_profiles up ON up.id = utr.user_id
+JOIN team_roles tr ON tr.id = utr.team_role_id
+WHERE utr.team_id = $1
+ORDER BY utr.joined_at;

@@ -61,6 +61,22 @@ func (a *TeamAdapter) JoinTeamAsMember(ctx context.Context, userID uuid.UUID, te
 	return nil
 }
 
+func (a *TeamAdapter) ListTeamMembers(ctx context.Context, teamID uuid.UUID) ([]query.ListTeamMembersRow, error) {
+	members, err := a.q.ListTeamMembers(ctx, teamID)
+	if err != nil {
+		return nil, fmt.Errorf("list team members: %w", err)
+	}
+	return members, nil
+}
+
+func (a *TeamAdapter) ListUserSkills(ctx context.Context, userID uuid.UUID) ([]query.UserSkill, error) {
+	skills, err := a.q.ListUserSkills(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("list user skills: %w", err)
+	}
+	return skills, nil
+}
+
 func (a *TeamAdapter) CreateTeam(ctx context.Context, params query.CreateTeamParams) (query.Team, error) {
 	team, err := a.q.CreateTeam(ctx, params)
 	if err != nil {
