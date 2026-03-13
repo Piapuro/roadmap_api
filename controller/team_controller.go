@@ -118,6 +118,45 @@ func (c *TeamController) UpdateTeam(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, nil)
 }
 
+// GetTeamMembers godoc
+// @Summary      チームメンバー一覧取得
+// @Description  チームに所属するメンバーのロール・スキル情報を返します（チームメンバーのみアクセス可能）
+// @Tags         teams
+// @Produce      json
+// @Param        id   path      string  true  "チームID (UUID)"
+// @Success      200  {array}   response.TeamMemberResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /teams/{id}/members [get]
+func (c *TeamController) GetTeamMembers(ctx echo.Context) error {
+	userIDStr, ok := ctx.Get(middleware.ContextKeyUserID).(string)
+	if !ok || userIDStr == "" {
+		return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	}
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid user id"})
+	}
+
+	teamID, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "invalid team id"})
+	}
+
+	members, err := c.teamService.GetTeamMembers(ctx.Request().Context(), userID, teamID)
+	if err != nil {
+		if errors.Is(err, service.ErrNotTeamMember) {
+			return ctx.JSON(http.StatusForbidden, map[string]string{"error": "access denied: not a team member"})
+		}
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	}
+
+	return ctx.JSON(http.StatusOK, members)
+}
+
 // IssueInviteToken godoc
 // @Summary      招待トークン発行
 // @Description  チームへの招待トークンを発行します（チームオーナーのみ）

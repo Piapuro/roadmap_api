@@ -1339,6 +1339,79 @@ const docTemplate = `{
                 }
             }
         },
+        "/teams/{id}/members": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "チームに所属するメンバーのロール・スキル情報を返します（チームメンバーのみアクセス可能）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "teams"
+                ],
+                "summary": "チームメンバー一覧取得",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "チームID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/response.TeamMemberResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/users/me": {
             "get": {
                 "security": [
@@ -2119,6 +2192,62 @@ const docTemplate = `{
                 },
                 "user": {
                     "$ref": "#/definitions/response.UserResponse"
+                }
+            }
+        },
+        "response.TeamMemberResponse": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "https://example.com/avatar.png"
+                },
+                "functional_role": {
+                    "type": "string",
+                    "example": "backend"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "joined_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "山田太郎"
+                },
+                "skill_level": {
+                    "type": "string",
+                    "example": "beginner"
+                },
+                "skills": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TeamMemberSkill"
+                    }
+                },
+                "team_role": {
+                    "type": "string",
+                    "example": "member"
+                }
+            }
+        },
+        "response.TeamMemberSkill": {
+            "type": "object",
+            "properties": {
+                "experience_years": {
+                    "type": "string",
+                    "example": "1.5"
+                },
+                "is_learning_goal": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "skill_name": {
+                    "type": "string",
+                    "example": "Go"
                 }
             }
         },
