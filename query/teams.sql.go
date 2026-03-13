@@ -132,6 +132,31 @@ func (q *Queries) GetTeamByInviteToken(ctx context.Context, inviteToken sql.Null
 	return i, err
 }
 
+const getUserTeamRoleID = `-- name: GetUserTeamRoleID :one
+SELECT utr.team_role_id, tr.name AS team_role_name, tr.level AS team_role_level
+FROM user_team_roles utr
+JOIN team_roles tr ON tr.id = utr.team_role_id
+WHERE utr.user_id = $1 AND utr.team_id = $2
+`
+
+type GetUserTeamRoleIDParams struct {
+	UserID uuid.UUID
+	TeamID uuid.UUID
+}
+
+type GetUserTeamRoleIDRow struct {
+	TeamRoleID    int16
+	TeamRoleName  string
+	TeamRoleLevel int16
+}
+
+func (q *Queries) GetUserTeamRoleID(ctx context.Context, arg GetUserTeamRoleIDParams) (GetUserTeamRoleIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserTeamRoleID, arg.UserID, arg.TeamID)
+	var i GetUserTeamRoleIDRow
+	err := row.Scan(&i.TeamRoleID, &i.TeamRoleName, &i.TeamRoleLevel)
+	return i, err
+}
+
 const isTeamMember = `-- name: IsTeamMember :one
 SELECT EXISTS(
     SELECT 1 FROM user_team_roles
@@ -286,6 +311,51 @@ WHERE created_by = $1
 
 func (q *Queries) ListTeamsByCreatedBy(ctx context.Context, createdBy uuid.UUID) ([]Team, error) {
 	rows, err := q.db.QueryContext(ctx, listTeamsByCreatedBy, createdBy)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Team
+	for rows.Next() {
+		var i Team
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Goal,
+			&i.Level,
+			&i.StartDate,
+			&i.EndDate,
+			&i.IsArchived,
+			&i.InviteToken,
+			&i.InviteTokenExpiresAt,
+			&i.CreatedBy,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTeamsByMember = `-- name: ListTeamsByMember :many
+SELECT t.id, t.name, t.goal, t.level, t.start_date, t.end_date, t.is_archived,
+       t.invite_token, t.invite_token_expires_at, t.created_by, t.created_at, t.updated_at
+FROM teams t
+JOIN user_team_roles utr ON utr.team_id = t.id
+WHERE utr.user_id = $1
+ORDER BY t.created_at DESC
+`
+
+func (q *Queries) ListTeamsByMember(ctx context.Context, userID uuid.UUID) ([]Team, error) {
+	rows, err := q.db.QueryContext(ctx, listTeamsByMember, userID)
 	if err != nil {
 		return nil, err
 	}

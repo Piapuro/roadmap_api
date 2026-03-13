@@ -1,19 +1,25 @@
 package router
 
 import (
-	"github.com/labstack/echo/v4"
 	"github.com/Piapuro/roadmap_api/controller"
 	"github.com/Piapuro/roadmap_api/middleware"
+	"github.com/labstack/echo/v4"
 )
 
-func RegisterTeamRoutes(e *echo.Echo, c *controller.TeamController, m *middleware.SupabaseAuth) {
+func RegisterTeamRoutes(e *echo.Echo, c *controller.TeamController, m *middleware.SupabaseAuth, ts *middleware.TeamScopeAuth) {
 	g := e.Group("/teams", m.Verify)
+
+	// 認証済みユーザーであれば誰でもアクセス可能
 	g.POST("", c.CreateTeam)
 	g.GET("", c.GetTeams)
 	g.POST("/join", c.JoinTeam)
-	g.GET("/:id", c.GetTeam)
-	g.PUT("/:id", c.UpdateTeam)
-	g.DELETE("/:id", c.DeleteTeam)
-	g.GET("/:id/members", c.GetTeamMembers)
-	g.POST("/:id/invite", c.IssueInviteToken)
+
+	// チームメンバー以上が必要
+	g.GET("/:id", c.GetTeam, ts.RequireMember())
+	g.GET("/:id/members", c.GetTeamMembers, ts.RequireMember())
+
+	// チームオーナーのみ
+	g.PUT("/:id", c.UpdateTeam, ts.RequireOwner())
+	g.DELETE("/:id", c.DeleteTeam, ts.RequireOwner())
+	g.POST("/:id/invite", c.IssueInviteToken, ts.RequireOwner())
 }
