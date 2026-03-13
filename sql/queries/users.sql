@@ -34,3 +34,8 @@ WHERE user_id = $1;
 INSERT INTO user_global_roles (user_id, global_role_id)
 VALUES ($1, $2)
 ON CONFLICT DO NOTHING;
+
+-- name: EnsureUser :exec
+INSERT INTO user_profiles (id, name)
+VALUES ($1, $2)
+ON CONFLICT (id) DO NOTHING;
