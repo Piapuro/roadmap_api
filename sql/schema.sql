@@ -1,17 +1,16 @@
 -- =====================
--- 認証・ユーザー管理
+-- ユーザー管理
+-- Supabase auth.users.id を PK として使用するプロフィールテーブル
 -- =====================
-CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email VARCHAR(255) UNIQUE NOT NULL,
+CREATE TABLE IF NOT EXISTS user_profiles (
+    id UUID PRIMARY KEY,
     name VARCHAR(20) NOT NULL,
-    password_hash VARCHAR(255),
     avatar_url VARCHAR(500),
     bio VARCHAR(200),
     skill_level VARCHAR(20) NOT NULL DEFAULT 'beginner'
         CHECK (skill_level IN ('beginner', 'intermediate', 'advanced')),
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS user_skills (
@@ -23,34 +22,16 @@ CREATE TABLE IF NOT EXISTS user_skills (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
--- Supabase auth.users.id をそのまま PK として使用するプロフィールテーブル
-CREATE TABLE IF NOT EXISTS user_profiles (
-    id UUID PRIMARY KEY,
-    name VARCHAR(20) NOT NULL,
-    avatar_url VARCHAR(500),
-    bio VARCHAR(200),
-    skill_level VARCHAR(20) NOT NULL DEFAULT 'beginner'
-        CHECK (skill_level IN ('beginner', 'intermediate', 'advanced')),
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
 CREATE TABLE IF NOT EXISTS global_roles (
     id SMALLINT PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL,
     level SMALLINT NOT NULL
 );
 
-INSERT INTO global_roles (id, name, level) VALUES
-    (1, 'GUEST', 10),
-    (2, 'LOGIN_USER', 20),
-    (3, 'SYSTEM_ADMIN', 99)
-ON CONFLICT DO NOTHING;
-
 CREATE TABLE IF NOT EXISTS user_global_roles (
     user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
     global_role_id SMALLINT NOT NULL REFERENCES global_roles(id),
-    granted_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    granted_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     PRIMARY KEY (user_id, global_role_id)
 );
 
@@ -68,7 +49,7 @@ CREATE TABLE IF NOT EXISTS teams (
     is_archived BOOLEAN NOT NULL DEFAULT false,
     invite_token VARCHAR(100) UNIQUE,
     invite_token_expires_at TIMESTAMP,
-    created_by UUID NOT NULL REFERENCES users(id),
+    created_by UUID NOT NULL REFERENCES user_profiles(id),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -79,14 +60,9 @@ CREATE TABLE IF NOT EXISTS team_roles (
     level SMALLINT NOT NULL
 );
 
-INSERT INTO team_roles (id, name, level) VALUES
-    (1, 'TEAM_MEMBER', 10),
-    (2, 'TEAM_OWNER', 20)
-ON CONFLICT DO NOTHING;
-
 CREATE TABLE IF NOT EXISTS user_team_roles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
     team_id UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
     team_role_id SMALLINT NOT NULL REFERENCES team_roles(id),
     functional_role VARCHAR(20)
@@ -108,7 +84,7 @@ CREATE TABLE IF NOT EXISTS requirements (
     supplement_url VARCHAR(500),
     status VARCHAR(10) NOT NULL DEFAULT 'draft'
         CHECK (status IN ('draft', 'locked')),
-    created_by UUID NOT NULL REFERENCES users(id),
+    created_by UUID NOT NULL REFERENCES user_profiles(id),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -126,7 +102,7 @@ CREATE TABLE IF NOT EXISTS requirement_features (
 CREATE TABLE IF NOT EXISTS ai_generation_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     team_id UUID NOT NULL REFERENCES teams(id),
-    user_id UUID NOT NULL REFERENCES users(id),
+    user_id UUID NOT NULL REFERENCES user_profiles(id),
     requirement_id UUID NOT NULL REFERENCES requirements(id),
     status VARCHAR(10) NOT NULL DEFAULT 'pending'
         CHECK (status IN ('pending', 'success', 'failed')),
@@ -188,7 +164,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     estimated_hours DECIMAL(5,1),
     status VARCHAR(10) NOT NULL DEFAULT 'todo'
         CHECK (status IN ('todo', 'doing', 'review', 'done')),
-    assigned_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    assigned_user_id UUID REFERENCES user_profiles(id) ON DELETE SET NULL,
     due_date DATE,
     phase_number SMALLINT NOT NULL DEFAULT 0,
     order_index SMALLINT NOT NULL DEFAULT 0,
@@ -215,7 +191,7 @@ CREATE TABLE IF NOT EXISTS task_checklists (
 CREATE TABLE IF NOT EXISTS task_comments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
     body VARCHAR(500) NOT NULL,
     image_url VARCHAR(500),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -233,13 +209,13 @@ CREATE TABLE IF NOT EXISTS learning_resources (
     url VARCHAR(500) NOT NULL,
     source_type VARCHAR(20) NOT NULL
         CHECK (source_type IN ('zenn', 'youtube', 'udemy', 'official_doc', 'custom')),
-    added_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    added_by UUID REFERENCES user_profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS learning_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
     resource_id UUID NOT NULL REFERENCES learning_resources(id) ON DELETE CASCADE,
     status VARCHAR(10) NOT NULL DEFAULT 'not_done'
         CHECK (status IN ('done', 'not_done')),
@@ -250,7 +226,7 @@ CREATE TABLE IF NOT EXISTS learning_logs (
 
 CREATE TABLE IF NOT EXISTS user_skill_achievements (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
     skill_name VARCHAR(100) NOT NULL,
     achieved_at TIMESTAMP NOT NULL DEFAULT NOW(),
     UNIQUE (user_id, skill_name)
@@ -289,7 +265,7 @@ CREATE TABLE IF NOT EXISTS sprint_tasks (
 -- =====================
 CREATE TABLE IF NOT EXISTS notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
     type VARCHAR(20) NOT NULL
         CHECK (type IN ('task_update', 'comment', 'deadline', 'assignment')),
     title VARCHAR(100) NOT NULL,
@@ -317,18 +293,10 @@ CREATE TABLE IF NOT EXISTS abac_rules (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-INSERT INTO abac_rules (id, name, target_action, condition_json, effect, priority) VALUES
-    (1, '要件定義ロック', 'requirement:update', '{"roadmap_status": "confirmed"}', 'deny', 10),
-    (2, '自タスクのみ更新', 'task:update', '{"assigned_user_id": "self"}', 'deny', 20),
-    (3, '初心者チームAI制限', 'ai:regenerate', '{"team_level": "beginner"}', 'deny', 30),
-    (4, 'タスク過負荷警告', 'task:assign', '{"active_task_count": {"gte": 5}}', 'warn', 40),
-    (5, 'チームスコープ境界', '*:any', '{"team_membership": "required"}', 'deny', 5)
-ON CONFLICT DO NOTHING;
-
 CREATE TABLE IF NOT EXISTS abac_rule_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     rule_id SMALLINT REFERENCES abac_rules(id) ON DELETE SET NULL,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
     team_id UUID REFERENCES teams(id) ON DELETE SET NULL,
     action VARCHAR(100) NOT NULL,
     attributes_snapshot JSONB NOT NULL,
@@ -339,7 +307,7 @@ CREATE TABLE IF NOT EXISTS abac_rule_logs (
 
 CREATE TABLE IF NOT EXISTS audit_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    user_id UUID REFERENCES user_profiles(id) ON DELETE SET NULL,
     team_id UUID REFERENCES teams(id) ON DELETE SET NULL,
     action VARCHAR(100) NOT NULL,
     resource_type VARCHAR(50),
@@ -362,6 +330,9 @@ CREATE INDEX IF NOT EXISTS idx_tasks_assigned_user
 
 CREATE INDEX IF NOT EXISTS idx_user_team_roles_lookup
     ON user_team_roles(user_id, team_id);
+
+CREATE INDEX IF NOT EXISTS idx_user_skills_user_id
+    ON user_skills(user_id);
 
 CREATE INDEX IF NOT EXISTS idx_learning_logs_user
     ON learning_logs(user_id, status);

@@ -10,7 +10,9 @@ func RegisterTeamRoutes(e *echo.Echo, c *controller.TeamController, m *middlewar
 	g := e.Group("/teams", m.Verify)
 	g.POST("", c.CreateTeam)
 	g.GET("", c.GetTeams)
+	g.POST("/join", c.JoinTeam)
 	g.GET("/:id", c.GetTeam)
 	g.PUT("/:id", c.UpdateTeam)
 	g.DELETE("/:id", c.DeleteTeam)
+	g.POST("/:id/invite", c.IssueInviteToken)
 }

@@ -168,7 +168,7 @@ func parseUserID(ctx echo.Context) (uuid.UUID, error) {
 	return uuid.Parse(str)
 }
 
-func buildProfileResponse(user query.User) response.ProfileResponse {
+func buildProfileResponse(user query.UserProfile) response.ProfileResponse {
 	var avatarURL *string
 	if user.AvatarUrl.Valid {
 		avatarURL = &user.AvatarUrl.String
@@ -187,7 +187,7 @@ func buildProfileResponse(user query.User) response.ProfileResponse {
 	}
 }
 
-func buildMySkillsResponse(user query.User, skills []query.UserSkill) response.MySkillsResponse {
+func buildMySkillsResponse(user query.UserProfile, skills []query.UserSkill) response.MySkillsResponse {
 	skillResponses := make([]response.UserSkillResponse, len(skills))
 	for i, s := range skills {
 		var expYears *float64

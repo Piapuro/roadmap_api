@@ -19,25 +19,25 @@ func NewUserAdapter(q *query.Queries, db *sql.DB) *UserAdapter {
 	return &UserAdapter{q: q, db: db}
 }
 
-func (a *UserAdapter) GetMe(ctx context.Context, userID uuid.UUID) (query.User, error) {
+func (a *UserAdapter) GetMe(ctx context.Context, userID uuid.UUID) (query.UserProfile, error) {
 	return a.q.GetUserByID(ctx, userID)
 }
 
-func (a *UserAdapter) UpdateMe(ctx context.Context, userID uuid.UUID, name string) (query.User, error) {
+func (a *UserAdapter) UpdateMe(ctx context.Context, userID uuid.UUID, name string) (query.UserProfile, error) {
 	return a.q.UpdateUserName(ctx, query.UpdateUserNameParams{
 		ID:   userID,
 		Name: name,
 	})
 }
 
-func (a *UserAdapter) GetMySkills(ctx context.Context, userID uuid.UUID) (query.User, []query.UserSkill, error) {
+func (a *UserAdapter) GetMySkills(ctx context.Context, userID uuid.UUID) (query.UserProfile, []query.UserSkill, error) {
 	user, err := a.q.GetUserByID(ctx, userID)
 	if err != nil {
-		return query.User{}, nil, fmt.Errorf("get user: %w", err)
+		return query.UserProfile{}, nil, fmt.Errorf("get user: %w", err)
 	}
 	skills, err := a.q.ListUserSkills(ctx, userID)
 	if err != nil {
-		return query.User{}, nil, fmt.Errorf("list user skills: %w", err)
+		return query.UserProfile{}, nil, fmt.Errorf("list user skills: %w", err)
 	}
 	return user, skills, nil
 }

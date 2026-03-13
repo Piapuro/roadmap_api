@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -115,6 +116,93 @@ func (c *TeamController) UpdateTeam(ctx echo.Context) error {
 	}
 	// TODO: implement
 	return ctx.JSON(http.StatusOK, nil)
+}
+
+// IssueInviteToken godoc
+// @Summary      招待トークン発行
+// @Description  チームへの招待トークンを発行します（チームオーナーのみ）
+// @Tags         teams
+// @Produce      json
+// @Param        id   path      string  true  "チームID (UUID)"
+// @Success      200  {object}  response.InviteTokenResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /teams/{id}/invite [post]
+func (c *TeamController) IssueInviteToken(ctx echo.Context) error {
+	userIDStr, ok := ctx.Get(middleware.ContextKeyUserID).(string)
+	if !ok || userIDStr == "" {
+		return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	}
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid user id"})
+	}
+
+	teamID, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "invalid team id"})
+	}
+
+	resp, err := c.teamService.IssueInviteToken(ctx.Request().Context(), userID, teamID)
+	if err != nil {
+		if errors.Is(err, service.ErrNotTeamOwner) {
+			return ctx.JSON(http.StatusForbidden, map[string]string{"error": "only team owner can issue invite tokens"})
+		}
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	}
+
+	return ctx.JSON(http.StatusOK, resp)
+}
+
+// JoinTeam godoc
+// @Summary      招待リンクからチーム参加
+// @Description  招待トークンを使用してチームに参加します
+// @Tags         teams
+// @Accept       json
+// @Produce      json
+// @Param        body  body      requests.JoinTeamRequest  true  "招待トークン"
+// @Success      200   {object}  response.JoinTeamResponse
+// @Failure      400   {object}  map[string]string
+// @Failure      401   {object}  map[string]string
+// @Failure      409   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /teams/join [post]
+func (c *TeamController) JoinTeam(ctx echo.Context) error {
+	var req requests.JoinTeamRequest
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+	if err := ctx.Validate(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
+	userIDStr, ok := ctx.Get(middleware.ContextKeyUserID).(string)
+	if !ok || userIDStr == "" {
+		return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	}
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid user id"})
+	}
+
+	resp, err := c.teamService.JoinTeam(ctx.Request().Context(), userID, req.Token)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrInviteTokenNotFound):
+			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "invalid invite token"})
+		case errors.Is(err, service.ErrInviteTokenExpired):
+			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "invite token has expired"})
+		case errors.Is(err, service.ErrAlreadyTeamMember):
+			return ctx.JSON(http.StatusConflict, map[string]string{"error": "already a team member"})
+		}
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	}
+
+	return ctx.JSON(http.StatusOK, resp)
 }
 
 // DeleteTeam godoc

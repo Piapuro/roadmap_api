@@ -9,7 +9,7 @@
 
 | ドメイン | テーブル名 | 概要 | Phase |
 |----------|------------|------|-------|
-| 認証・ユーザー | `users` | ユーザーアカウント | P0 |
+| 認証・ユーザー | `user_profiles` | ユーザーアカウント（Supabase Auth連携） | P0 |
 | 認証・ユーザー | `user_skills` | スキル・技術登録 | P0 |
 | 認証・ユーザー | `global_roles` | システムロールマスタ | P0 |
 | 認証・ユーザー | `user_global_roles` | ユーザーとシステムロールの紐づけ | P0 |
@@ -46,11 +46,9 @@
 
 ```mermaid
 erDiagram
-    users {
-        uuid id PK
-        varchar(255) email "UNIQUE NOT NULL"
+    user_profiles {
+        uuid id PK "auth.users.idと同じ値"
         varchar(20) name "NOT NULL"
-        varchar(255) password_hash "NULL（OAuth時はnull）"
         varchar(500) avatar_url "NULL"
         varchar(200) bio "NULL"
         enum skill_level "beginner/intermediate/advanced"
@@ -109,13 +107,13 @@ erDiagram
         timestamp joined_at
     }
 
-    users ||--o{ user_skills : "登録"
-    users ||--o{ user_global_roles : "付与"
+    user_profiles ||--o{ user_skills : "登録"
+    user_profiles ||--o{ user_global_roles : "付与"
     global_roles ||--o{ user_global_roles : "定義"
-    users ||--o{ user_team_roles : "所属"
+    user_profiles ||--o{ user_team_roles : "所属"
     teams ||--o{ user_team_roles : "持つ"
     team_roles ||--o{ user_team_roles : "定義"
-    users ||--o{ teams : "作成"
+    user_profiles ||--o{ teams : "作成"
 ```
 
 ---
@@ -389,11 +387,11 @@ erDiagram
     }
 
     tasks ||--o{ learning_resources : "紐づく"
-    users ||--o{ learning_resources : "追加"
-    users ||--o{ learning_logs : "記録"
+    user_profiles ||--o{ learning_resources : "追加"
+    user_profiles ||--o{ learning_logs : "記録"
     learning_resources ||--o{ learning_logs : "対象"
-    users ||--o{ user_skill_achievements : "取得"
-    users ||--o{ notifications : "受信"
+    user_profiles ||--o{ user_skill_achievements : "取得"
+    user_profiles ||--o{ notifications : "受信"
     abac_rules ||--o{ abac_rule_logs : "ログ"
     abac_rules ||--o{ audit_logs : "参照"
 ```
@@ -402,14 +400,14 @@ erDiagram
 
 ## 全テーブル定義
 
-### users
+### user_profiles
+
+> Supabase Auth（`auth.users`）と連携。ユーザー登録時にトリガーで自動作成される。`id` は `auth.users.id` と同じ UUID を使用。
 
 | カラム名 | 型 | 制約 | 説明 |
 |----------|----|------|------|
-| id | UUID | PK | |
-| email | VARCHAR(255) | UNIQUE NOT NULL | |
+| id | UUID | PK | auth.users.id と同値 |
 | name | VARCHAR(20) | NOT NULL | 最大20文字 |
-| password_hash | VARCHAR(255) | NULL | OAuthユーザーはnull |
 | avatar_url | VARCHAR(500) | NULL | 5MB以下の画像URL |
 | bio | VARCHAR(200) | NULL | 自己紹介 |
 | skill_level | ENUM | NOT NULL DEFAULT 'beginner' | beginner/intermediate/advanced |
@@ -423,7 +421,7 @@ erDiagram
 | カラム名 | 型 | 制約 | 説明 |
 |----------|----|------|------|
 | id | UUID | PK | |
-| user_id | UUID | FK → users NOT NULL | |
+| user_id | UUID | FK → user_profiles NOT NULL | |
 | skill_name | VARCHAR(30) | NOT NULL | スキル名（30文字以内）|
 | experience_years | DECIMAL(3,1) | NULL | 経験年数 |
 | is_learning_goal | BOOLEAN | NOT NULL DEFAULT false | 学習したい技術フラグ |
@@ -453,7 +451,7 @@ erDiagram
 
 | カラム名 | 型 | 制約 | 説明 |
 |----------|----|------|------|
-| user_id | UUID | FK → users / PK(複合) | |
+| user_id | UUID | FK → user_profiles / PK(複合) | |
 | global_role_id | SMALLINT | FK → global_roles / PK(複合) | |
 | granted_at | TIMESTAMP | NOT NULL DEFAULT NOW() | |
 
@@ -472,7 +470,7 @@ erDiagram
 | is_archived | BOOLEAN | NOT NULL DEFAULT false | |
 | invite_token | VARCHAR(100) | UNIQUE NULL | 招待トークン |
 | invite_token_expires_at | TIMESTAMP | NULL | トークン有効期限（7日間） |
-| created_by | UUID | FK → users NOT NULL | チーム作成者 |
+| created_by | UUID | FK → user_profiles NOT NULL | チーム作成者 |
 | created_at | TIMESTAMP | NOT NULL DEFAULT NOW() | |
 | updated_at | TIMESTAMP | NOT NULL DEFAULT NOW() | |
 
@@ -500,7 +498,7 @@ erDiagram
 | カラム名 | 型 | 制約 | 説明 |
 |----------|----|------|------|
 | id | UUID | PK | |
-| user_id | UUID | FK → users NOT NULL | |
+| user_id | UUID | FK → user_profiles NOT NULL | |
 | team_id | UUID | FK → teams NOT NULL | |
 | team_role_id | SMALLINT | FK → team_roles NOT NULL | |
 | functional_role | ENUM | NULL | pm/frontend/backend/uiux/infra |
@@ -521,7 +519,7 @@ erDiagram
 | free_text | VARCHAR(1000) | NULL | 自由記述（補足） |
 | supplement_url | VARCHAR(500) | NULL | URL形式チェック |
 | status | ENUM | NOT NULL DEFAULT 'draft' | draft/locked |
-| created_by | UUID | FK → users NOT NULL | |
+| created_by | UUID | FK → user_profiles NOT NULL | |
 | created_at | TIMESTAMP | NOT NULL DEFAULT NOW() | |
 | updated_at | TIMESTAMP | NOT NULL DEFAULT NOW() | |
 
@@ -544,7 +542,7 @@ erDiagram
 |----------|----|------|------|
 | id | UUID | PK | |
 | team_id | UUID | FK → teams NOT NULL | |
-| user_id | UUID | FK → users NOT NULL | 実行者 |
+| user_id | UUID | FK → user_profiles NOT NULL | 実行者 |
 | requirement_id | UUID | FK → requirements NOT NULL | |
 | status | ENUM | NOT NULL | pending/success/failed |
 | error_message | TEXT | NULL | 失敗時のエラー詳細 |
@@ -619,7 +617,7 @@ erDiagram
 | description | TEXT | NULL | |
 | estimated_hours | DECIMAL(5,1) | NULL | AI工数見積もり |
 | status | ENUM | NOT NULL DEFAULT 'todo' | todo/doing/review/done |
-| assigned_user_id | UUID | FK → users NULL | |
+| assigned_user_id | UUID | FK → user_profiles NULL | |
 | due_date | DATE | NULL | |
 | phase_number | SMALLINT | NOT NULL DEFAULT 0 | |
 | order_index | SMALLINT | NOT NULL DEFAULT 0 | カンバン内表示順 |
@@ -658,7 +656,7 @@ erDiagram
 |----------|----|------|------|
 | id | UUID | PK | |
 | task_id | UUID | FK → tasks NOT NULL | |
-| user_id | UUID | FK → users NOT NULL | |
+| user_id | UUID | FK → user_profiles NOT NULL | |
 | body | VARCHAR(500) | NOT NULL | 500文字以内 |
 | image_url | VARCHAR(500) | NULL | 画像添付 |
 | created_at | TIMESTAMP | NOT NULL DEFAULT NOW() | |
@@ -676,7 +674,7 @@ erDiagram
 | title | VARCHAR(200) | NOT NULL | |
 | url | VARCHAR(500) | NOT NULL | |
 | source_type | ENUM | NOT NULL | zenn/youtube/udemy/official_doc/custom |
-| added_by | UUID | FK → users NULL | NULLはAI自動追加 |
+| added_by | UUID | FK → user_profiles NULL | NULLはAI自動追加 |
 | created_at | TIMESTAMP | NOT NULL DEFAULT NOW() | |
 
 ---
@@ -686,7 +684,7 @@ erDiagram
 | カラム名 | 型 | 制約 | 説明 |
 |----------|----|------|------|
 | id | UUID | PK | |
-| user_id | UUID | FK → users NOT NULL | |
+| user_id | UUID | FK → user_profiles NOT NULL | |
 | resource_id | UUID | FK → learning_resources NOT NULL | |
 | status | ENUM | NOT NULL DEFAULT 'not_done' | done/not_done |
 | completed_at | TIMESTAMP | NULL | |
@@ -701,7 +699,7 @@ erDiagram
 | カラム名 | 型 | 制約 | 説明 |
 |----------|----|------|------|
 | id | UUID | PK | |
-| user_id | UUID | FK → users NOT NULL | |
+| user_id | UUID | FK → user_profiles NOT NULL | |
 | skill_name | VARCHAR(100) | NOT NULL | |
 | achieved_at | TIMESTAMP | NOT NULL DEFAULT NOW() | |
 
@@ -750,7 +748,7 @@ erDiagram
 | カラム名 | 型 | 制約 | 説明 |
 |----------|----|------|------|
 | id | UUID | PK | |
-| user_id | UUID | FK → users NOT NULL | 通知受信者 |
+| user_id | UUID | FK → user_profiles NOT NULL | 通知受信者 |
 | type | ENUM | NOT NULL | task_update/comment/deadline/assignment |
 | title | VARCHAR(100) | NOT NULL | |
 | body | VARCHAR(300) | NULL | |
@@ -794,7 +792,7 @@ erDiagram
 |----------|----|------|------|
 | id | UUID | PK | |
 | rule_id | SMALLINT | FK → abac_rules NULL（未マッチ時） | |
-| user_id | UUID | FK → users NOT NULL | |
+| user_id | UUID | FK → user_profiles NOT NULL | |
 | team_id | UUID | FK → teams NULL | |
 | action | VARCHAR(100) | NOT NULL | 実行されたアクション |
 | attributes_snapshot | JSONB | NOT NULL | 評価時の属性値スナップショット |
@@ -808,7 +806,7 @@ erDiagram
 | カラム名 | 型 | 制約 | 説明 |
 |----------|----|------|------|
 | id | UUID | PK | |
-| user_id | UUID | FK → users NULL | 未認証リクエストはnull |
+| user_id | UUID | FK → user_profiles NULL | 未認証リクエストはnull |
 | team_id | UUID | FK → teams NULL | |
 | action | VARCHAR(100) | NOT NULL | WHO WHAT |
 | resource_type | VARCHAR(50) | NULL | 操作対象リソース種別 |

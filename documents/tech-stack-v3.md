@@ -135,12 +135,13 @@ erDiagram
         timestamp created_at
     }
     user_profiles["user_profiles（アプリ管理）"] {
-        uuid id PK
-        uuid auth_user_id FK "auth.users.idと紐づけ"
+        uuid id PK "auth.users.idと同値"
         string name
+        string avatar_url
+        string bio
         string skill_level
-        string[] tech_tags
         timestamp created_at
+        timestamp updated_at
     }
     global_roles {
         uuid id PK
@@ -237,7 +238,7 @@ erDiagram
         timestamp created_at
     }
 
-    auth_users ||--|| user_profiles : "auth_user_id"
+    auth_users ||--|| user_profiles : "id（同値）"
     user_profiles ||--o{ user_global_roles : ""
     global_roles ||--o{ user_global_roles : ""
     user_profiles ||--o{ user_team_roles : ""
