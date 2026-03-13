@@ -79,6 +79,7 @@ func New() (*Container, error) {
 
 	// Middleware
 	auth := middleware.NewSupabaseAuth(supabaseCfg.JWTSecret, strings.TrimSuffix(supabaseCfg.URL, "/")+"/auth/v1")
+	teamScopeAuth := middleware.NewTeamScopeAuth(q)
 
 	// Echo
 	e := echo.New()
@@ -106,7 +107,7 @@ func New() (*Container, error) {
 	// Routes
 	router.RegisterAuthRoutes(e, authController, auth)
 	router.RegisterUserRoutes(e, userController, auth)
-	router.RegisterTeamRoutes(e, teamController, auth)
+	router.RegisterTeamRoutes(e, teamController, auth, teamScopeAuth)
 	router.RegisterRequirementRoutes(e, requirementController, auth)
 	router.RegisterRoadmapRoutes(e, roadmapController, auth)
 	router.RegisterWebhookRoutes(e, webhookController)

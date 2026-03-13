@@ -53,6 +53,12 @@ INSERT INTO user_team_roles (user_id, team_id, team_role_id)
 VALUES ($1, $2, $3)
 ON CONFLICT DO NOTHING;
 
+-- name: GetUserTeamRoleID :one
+SELECT utr.team_role_id, tr.name AS team_role_name, tr.level AS team_role_level
+FROM user_team_roles utr
+JOIN team_roles tr ON tr.id = utr.team_role_id
+WHERE utr.user_id = $1 AND utr.team_id = $2;
+
 -- name: ListTeamMembers :many
 SELECT
     up.id,

@@ -132,6 +132,31 @@ func (q *Queries) GetTeamByInviteToken(ctx context.Context, inviteToken sql.Null
 	return i, err
 }
 
+const getUserTeamRoleID = `-- name: GetUserTeamRoleID :one
+SELECT utr.team_role_id, tr.name AS team_role_name, tr.level AS team_role_level
+FROM user_team_roles utr
+JOIN team_roles tr ON tr.id = utr.team_role_id
+WHERE utr.user_id = $1 AND utr.team_id = $2
+`
+
+type GetUserTeamRoleIDParams struct {
+	UserID uuid.UUID
+	TeamID uuid.UUID
+}
+
+type GetUserTeamRoleIDRow struct {
+	TeamRoleID    int16
+	TeamRoleName  string
+	TeamRoleLevel int16
+}
+
+func (q *Queries) GetUserTeamRoleID(ctx context.Context, arg GetUserTeamRoleIDParams) (GetUserTeamRoleIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserTeamRoleID, arg.UserID, arg.TeamID)
+	var i GetUserTeamRoleIDRow
+	err := row.Scan(&i.TeamRoleID, &i.TeamRoleName, &i.TeamRoleLevel)
+	return i, err
+}
+
 const isTeamMember = `-- name: IsTeamMember :one
 SELECT EXISTS(
     SELECT 1 FROM user_team_roles

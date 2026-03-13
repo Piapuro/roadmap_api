@@ -146,11 +146,9 @@ func (c *TeamController) GetTeamMembers(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "invalid team id"})
 	}
 
+	// 権限チェックは TeamScopeAuth ミドルウェアで実施済み
 	members, err := c.teamService.GetTeamMembers(ctx.Request().Context(), userID, teamID)
 	if err != nil {
-		if errors.Is(err, service.ErrNotTeamMember) {
-			return ctx.JSON(http.StatusForbidden, map[string]string{"error": "access denied: not a team member"})
-		}
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 	}
 
@@ -185,11 +183,9 @@ func (c *TeamController) IssueInviteToken(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "invalid team id"})
 	}
 
+	// 権限チェックは TeamScopeAuth ミドルウェアで実施済み
 	resp, err := c.teamService.IssueInviteToken(ctx.Request().Context(), userID, teamID)
 	if err != nil {
-		if errors.Is(err, service.ErrNotTeamOwner) {
-			return ctx.JSON(http.StatusForbidden, map[string]string{"error": "only team owner can issue invite tokens"})
-		}
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 	}
 
