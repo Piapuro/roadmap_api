@@ -53,7 +53,7 @@ func New() (*Container, error) {
 	// Adapters
 	userAdapter := adapter.NewUserAdapter(q, db)
 	teamAdapter := adapter.NewTeamAdapter(q)
-	requirementAdapter := adapter.NewRequirementAdapter(q)
+	requirementAdapter := adapter.NewRequirementAdapter(q, db)
 	webhookAdapter := adapter.NewWebhookAdapter(db)
 	aiAdapter := adapter.NewAIAdapter()
 

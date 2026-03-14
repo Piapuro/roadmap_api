@@ -572,12 +572,6 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "403":
-          description: Forbidden
-          schema:
-            additionalProperties:
-              type: string
-            type: object
         "500":
           description: Internal Server Error
           schema:
@@ -611,12 +605,6 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "403":
-          description: Forbidden
-          schema:
-            additionalProperties:
-              type: string
-            type: object
         "404":
           description: Not Found
           schema:
@@ -637,7 +625,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: 指定IDの要件定義を更新します
+      description: 指定IDの要件定義を更新します（draft 状態のみ）
       parameters:
       - description: 要件定義ID (UUID)
         in: path
@@ -669,14 +657,8 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "403":
-          description: Forbidden
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
+        "409":
+          description: Conflict
           schema:
             additionalProperties:
               type: string
@@ -694,7 +676,7 @@ paths:
       - requirements
   /requirements/{id}/submit:
     post:
-      description: 要件定義のステータスを draft から submitted へ遷移させます
+      description: 要件定義のステータスを draft から locked へ遷移させます
       parameters:
       - description: 要件定義ID (UUID)
         in: path
@@ -714,12 +696,6 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "403":
-          description: Forbidden
-          schema:
-            additionalProperties:
-              type: string
-            type: object
         "404":
           description: Not Found
           schema:
@@ -727,7 +703,7 @@ paths:
               type: string
             type: object
         "409":
-          description: すでに提出済みの場合
+          description: Conflict
           schema:
             additionalProperties:
               type: string
@@ -740,7 +716,7 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: 要件定義を提出
+      summary: 要件定義を確定（ロック）
       tags:
       - requirements
   /roadmaps:
