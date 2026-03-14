@@ -4,7 +4,7 @@ definitions:
     properties:
       difficulty_level:
         example: 2
-        maximum: 5
+        maximum: 3
         minimum: 1
         type: integer
       features:
@@ -19,18 +19,19 @@ definitions:
         example: ECサイトを作りたい
         type: string
       product_type:
+        enum:
+        - web
+        - app
+        - game
+        - ai
         example: web
         type: string
       supplement_url:
         example: https://example.com/spec
         type: string
-      team_id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
     required:
     - difficulty_level
     - product_type
-    - team_id
     type: object
   requests.CreateRoadmapRequest:
     properties:
@@ -120,7 +121,7 @@ definitions:
     properties:
       difficulty_level:
         example: 3
-        maximum: 5
+        maximum: 3
         minimum: 1
         type: integer
       features:
@@ -134,6 +135,11 @@ definitions:
         example: モバイルアプリに変更
         type: string
       product_type:
+        enum:
+        - web
+        - app
+        - game
+        - ai
         example: app
         type: string
       supplement_url:
@@ -541,48 +547,6 @@ paths:
       summary: ユーザー登録
       tags:
       - auth
-  /requirements:
-    post:
-      consumes:
-      - application/json
-      description: 新しい要件定義を作成します
-      parameters:
-      - description: 要件定義情報
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/requests.CreateRequirementRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/response.RequirementResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: 要件定義作成
-      tags:
-      - requirements
   /requirements/{id}:
     get:
       description: 指定IDの要件定義を返します
@@ -1261,6 +1225,93 @@ paths:
       summary: チームメンバー一覧取得
       tags:
       - teams
+  /teams/{id}/requirements:
+    get:
+      description: 指定チームに属する要件定義の一覧を返します
+      parameters:
+      - description: チームID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/response.RequirementResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: チームの要件定義一覧取得
+      tags:
+      - requirements
+    post:
+      consumes:
+      - application/json
+      description: チームに新しい要件定義を作成します
+      parameters:
+      - description: チームID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 要件定義情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/requests.CreateRequirementRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.RequirementResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 要件定義作成
+      tags:
+      - requirements
   /teams/join:
     post:
       consumes:

@@ -183,72 +183,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/requirements": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "新しい要件定義を作成します",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "requirements"
-                ],
-                "summary": "要件定義作成",
-                "parameters": [
-                    {
-                        "description": "要件定義情報",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/requests.CreateRequirementRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/response.RequirementResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/requirements/{id}": {
             "get": {
                 "security": [
@@ -1376,6 +1310,141 @@ const docTemplate = `{
                 }
             }
         },
+        "/teams/{id}/requirements": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "指定チームに属する要件定義の一覧を返します",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "requirements"
+                ],
+                "summary": "チームの要件定義一覧取得",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "チームID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/response.RequirementResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "チームに新しい要件定義を作成します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "requirements"
+                ],
+                "summary": "要件定義作成",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "チームID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "要件定義情報",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.CreateRequirementRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/response.RequirementResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/users/me": {
             "get": {
                 "security": [
@@ -1694,13 +1763,12 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "difficulty_level",
-                "product_type",
-                "team_id"
+                "product_type"
             ],
             "properties": {
                 "difficulty_level": {
                     "type": "integer",
-                    "maximum": 5,
+                    "maximum": 3,
                     "minimum": 1,
                     "example": 2
                 },
@@ -1721,15 +1789,17 @@ const docTemplate = `{
                 },
                 "product_type": {
                     "type": "string",
+                    "enum": [
+                        "web",
+                        "app",
+                        "game",
+                        "ai"
+                    ],
                     "example": "web"
                 },
                 "supplement_url": {
                     "type": "string",
                     "example": "https://example.com/spec"
-                },
-                "team_id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -1856,7 +1926,7 @@ const docTemplate = `{
             "properties": {
                 "difficulty_level": {
                     "type": "integer",
-                    "maximum": 5,
+                    "maximum": 3,
                     "minimum": 1,
                     "example": 3
                 },
@@ -1876,6 +1946,12 @@ const docTemplate = `{
                 },
                 "product_type": {
                     "type": "string",
+                    "enum": [
+                        "web",
+                        "app",
+                        "game",
+                        "ai"
+                    ],
                     "example": "app"
                 },
                 "supplement_url": {
