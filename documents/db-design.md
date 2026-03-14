@@ -867,3 +867,64 @@ CREATE INDEX idx_notifications_user_unread ON notifications(user_id, is_read);
 -- 監査ログ（時系列参照）
 CREATE INDEX idx_audit_logs_created ON audit_logs(created_at DESC);
 ```
+
+---
+
+## 実装済み API ルーティング（2026-03-14 時点）
+
+### 認証（`/auth`）
+
+| メソッド | パス | 説明 | 認可 |
+|---------|------|------|------|
+| POST | `/auth/login` | Supabase 経由ログイン・user_profiles upsert | なし |
+
+### ユーザー（`/users`）
+
+| メソッド | パス | 説明 | 認可 |
+|---------|------|------|------|
+| GET | `/users/me` | 自分のプロフィール取得 | JWT認証 |
+| PUT | `/users/me` | プロフィール更新（スキルレベル等） | JWT認証 |
+
+### チーム（`/teams`）
+
+| メソッド | パス | 説明 | 認可 |
+|---------|------|------|------|
+| POST | `/teams` | チーム作成 | JWT認証 |
+| GET | `/teams` | 所属チーム一覧取得 | JWT認証 |
+| POST | `/teams/join` | 招待トークンでチーム参加 | JWT認証 |
+| GET | `/teams/:id` | チーム詳細取得 | TeamScopeAuth.RequireMember() |
+| GET | `/teams/:id/members` | チームメンバー一覧 | TeamScopeAuth.RequireMember() |
+| GET | `/teams/:id/requirements` | チームの要件定義一覧 | TeamScopeAuth.RequireMember() |
+| POST | `/teams/:id/requirements` | 要件定義作成 | TeamScopeAuth.RequireMember() |
+| PUT | `/teams/:id` | チーム情報更新 | TeamScopeAuth.RequireOwner() |
+| DELETE | `/teams/:id` | チーム削除 | TeamScopeAuth.RequireOwner() |
+| POST | `/teams/:id/invite` | 招待トークン発行 | TeamScopeAuth.RequireOwner() |
+
+### 要件定義（`/requirements`）
+
+| メソッド | パス | 説明 | 認可 |
+|---------|------|------|------|
+| GET | `/requirements/:id` | 要件定義詳細取得 | JWT認証のみ |
+| PUT | `/requirements/:id` | 要件定義更新（draft のみ） | JWT認証のみ |
+| POST | `/requirements/:id/submit` | 要件定義を locked に確定 | JWT認証のみ |
+
+> ⚠️ `GET/PUT/POST /requirements/:id` はチームスコープ検証なし（要件定義IDを知る任意のJWT保持者がアクセス可能）。将来的に TeamScopeAuth 追加を検討。
+
+### ロードマップ（`/roadmaps`）
+
+| メソッド | パス | 説明 | 認可 |
+|---------|------|------|------|
+| POST | `/roadmaps/generate` | AI によるロードマップ生成 | JWT認証 |
+
+---
+
+## マイグレーション履歴
+
+| ファイル | 内容 |
+|---------|------|
+| `000001_init.up.sql` | 初期スキーマ全体（users, teams, requirements 等） |
+| `000002_add_user_profiles.up.sql` | `user_profiles` テーブル追加、`user_skills` FK 変更 |
+| `000003_add_user_profiles_fk_to_teams.up.sql` | `teams.created_by` / `user_team_roles.user_id` FK を `user_profiles(id)` に変更 |
+| `000004_add_requirements.up.sql` | `requirements.created_by` FK を `user_profiles(id)` に変更、インデックス追加 |
+
+> **本番（Supabase）適用時の注意**：`supabase/migrations/` 配下のファイルを Supabase CLI で適用すること。`sql/migrations/` はローカル Docker 用。
