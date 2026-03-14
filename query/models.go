@@ -261,6 +261,16 @@ type UserGlobalRole struct {
 	GrantedAt    time.Time
 }
 
+type UserProfile struct {
+	ID         uuid.UUID
+	Name       string
+	AvatarUrl  sql.NullString
+	Bio        sql.NullString
+	SkillLevel string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
 type UserSkill struct {
 	ID              uuid.UUID
 	UserID          uuid.UUID
