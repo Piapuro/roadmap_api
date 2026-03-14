@@ -11,3 +11,7 @@ type CreateTeamRequest struct {
 type UpdateTeamRequest struct {
 	Name string `json:"name" validate:"required" example:"Bチーム"`
 }
+
+type JoinTeamRequest struct {
+	Token string `json:"token" validate:"required" example:"a1b2c3d4e5f6..."`
+}

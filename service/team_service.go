@@ -2,6 +2,10 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
+	"database/sql"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"time"
 
@@ -12,12 +16,156 @@ import (
 	"github.com/google/uuid"
 )
 
+var (
+	ErrNotTeamOwner        = errors.New("not team owner")
+	ErrInviteTokenExpired  = errors.New("invite token expired")
+	ErrInviteTokenNotFound = errors.New("invite token not found")
+	ErrAlreadyTeamMember   = errors.New("already team member")
+	ErrNotTeamMember       = errors.New("not team member")
+)
+
 type TeamService struct {
 	teamAdapter *adapter.TeamAdapter
 }
 
 func NewTeamService(teamAdapter *adapter.TeamAdapter) *TeamService {
 	return &TeamService{teamAdapter: teamAdapter}
+}
+
+func (s *TeamService) IssueInviteToken(ctx context.Context, userID uuid.UUID, teamID uuid.UUID) (response.InviteTokenResponse, error) {
+	isOwner, err := s.teamAdapter.IsTeamOwner(ctx, userID, teamID)
+	if err != nil {
+		return response.InviteTokenResponse{}, fmt.Errorf("check team owner: %w", err)
+	}
+	if !isOwner {
+		return response.InviteTokenResponse{}, ErrNotTeamOwner
+	}
+
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		return response.InviteTokenResponse{}, fmt.Errorf("generate token: %w", err)
+	}
+	token := hex.EncodeToString(tokenBytes)
+	expiresAt := time.Now().UTC().Add(7 * 24 * time.Hour)
+
+	team, err := s.teamAdapter.IssueInviteToken(ctx, teamID, token, expiresAt)
+	if err != nil {
+		return response.InviteTokenResponse{}, err
+	}
+
+	return response.InviteTokenResponse{
+		TeamID:    team.ID.String(),
+		Token:     token,
+		InviteURL: "/teams/join?token=" + token,
+		ExpiresAt: expiresAt,
+	}, nil
+}
+
+func (s *TeamService) JoinTeam(ctx context.Context, userID uuid.UUID, token string) (response.JoinTeamResponse, error) {
+	team, err := s.teamAdapter.GetTeamByInviteToken(ctx, token)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return response.JoinTeamResponse{}, ErrInviteTokenNotFound
+		}
+		return response.JoinTeamResponse{}, fmt.Errorf("get team by invite token: %w", err)
+	}
+
+	if !team.InviteTokenExpiresAt.Valid || time.Now().UTC().After(team.InviteTokenExpiresAt.Time) {
+		return response.JoinTeamResponse{}, ErrInviteTokenExpired
+	}
+
+	isMember, err := s.teamAdapter.IsTeamMember(ctx, userID, team.ID)
+	if err != nil {
+		return response.JoinTeamResponse{}, fmt.Errorf("check team member: %w", err)
+	}
+	if isMember {
+		return response.JoinTeamResponse{}, ErrAlreadyTeamMember
+	}
+
+	if err := s.teamAdapter.JoinTeamAsMember(ctx, userID, team.ID); err != nil {
+		return response.JoinTeamResponse{}, err
+	}
+
+	return response.JoinTeamResponse{
+		TeamID:   team.ID.String(),
+		UserID:   userID.String(),
+		JoinedAt: time.Now().UTC(),
+	}, nil
+}
+
+func (s *TeamService) GetTeams(ctx context.Context, userID uuid.UUID) ([]response.TeamResponse, error) {
+	teams, err := s.teamAdapter.ListTeamsByMember(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]response.TeamResponse, 0, len(teams))
+	for _, t := range teams {
+		result = append(result, response.TeamResponse{
+			ID:        t.ID.String(),
+			Name:      t.Name,
+			Goal:      t.Goal,
+			Level:     t.Level,
+			StartDate: t.StartDate,
+			EndDate:   t.EndDate,
+			CreatedBy: t.CreatedBy.String(),
+			CreatedAt: t.CreatedAt,
+		})
+	}
+	return result, nil
+}
+
+func (s *TeamService) GetTeamMembers(ctx context.Context, requesterID uuid.UUID, teamID uuid.UUID) ([]response.TeamMemberResponse, error) {
+	isMember, err := s.teamAdapter.IsTeamMember(ctx, requesterID, teamID)
+	if err != nil {
+		return nil, fmt.Errorf("check team member: %w", err)
+	}
+	if !isMember {
+		return nil, ErrNotTeamMember
+	}
+
+	members, err := s.teamAdapter.ListTeamMembers(ctx, teamID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]response.TeamMemberResponse, 0, len(members))
+	for _, m := range members {
+		skills, err := s.teamAdapter.ListUserSkills(ctx, m.ID)
+		if err != nil {
+			return nil, fmt.Errorf("list skills for user %s: %w", m.ID, err)
+		}
+
+		skillResp := make([]response.TeamMemberSkill, 0, len(skills))
+		for _, sk := range skills {
+			s := response.TeamMemberSkill{
+				SkillName:      sk.SkillName,
+				IsLearningGoal: sk.IsLearningGoal,
+			}
+			if sk.ExperienceYears.Valid {
+				s.ExperienceYears = &sk.ExperienceYears.String
+			}
+			skillResp = append(skillResp, s)
+		}
+
+		mem := response.TeamMemberResponse{
+			ID:         m.ID.String(),
+			Name:       m.Name,
+			SkillLevel: m.SkillLevel,
+			TeamRole:   m.TeamRoleName,
+			JoinedAt:   m.JoinedAt,
+			Skills:     skillResp,
+		}
+		if m.AvatarUrl.Valid {
+			mem.AvatarURL = &m.AvatarUrl.String
+		}
+		if m.FunctionalRole.Valid {
+			mem.FunctionalRole = &m.FunctionalRole.String
+		}
+		result = append(result, mem)
+	}
+
+	return result, nil
 }
 
 func (s *TeamService) CreateTeam(ctx context.Context, userID uuid.UUID, req requests.CreateTeamRequest) (response.TeamResponse, error) {

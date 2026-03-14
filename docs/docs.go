@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/auth/login": {
             "post": {
-                "description": "[認証不要] メールアドレスとパスワードで認証し、JWTトークンを取得します（未実装）",
+                "description": "メールアドレスとパスワードで認証し、JWTトークンを取得します",
                 "consumes": [
                     "application/json"
                 ],
@@ -83,7 +83,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "現在のセッションを無効化します（未実装）",
+                "description": "現在のセッションを無効化します",
                 "produces": [
                     "application/json"
                 ],
@@ -937,6 +937,81 @@ const docTemplate = `{
                 }
             }
         },
+        "/teams/join": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "招待トークンを使用してチームに参加します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "teams"
+                ],
+                "summary": "招待リンクからチーム参加",
+                "parameters": [
+                    {
+                        "description": "招待トークン",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.JoinTeamRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JoinTeamResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/teams/{id}": {
             "get": {
                 "security": [
@@ -1158,26 +1233,44 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/me": {
-            "get": {
+        "/teams/{id}/invite": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "ログイン中のユーザー情報を返します",
+                "description": "チームへの招待トークンを発行します（チームオーナーのみ）",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "users"
+                    "teams"
                 ],
-                "summary": "自分のプロフィール取得",
+                "summary": "招待トークン発行",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "チームID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.UserResponse"
+                            "$ref": "#/definitions/response.InviteTokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "401": {
@@ -1208,6 +1301,131 @@ const docTemplate = `{
                         }
                     }
                 }
+            }
+        },
+        "/teams/{id}/members": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "チームに所属するメンバーのロール・スキル情報を返します（チームメンバーのみアクセス可能）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "teams"
+                ],
+                "summary": "チームメンバー一覧取得",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "チームID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/response.TeamMemberResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "ログイン中のユーザー情報を返します",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "自分のプロフィール取得",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.ProfileResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
             },
             "put": {
                 "security": [
@@ -1215,7 +1433,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "ログイン中のユーザー情報を更新します",
+                "description": "ログイン中のユーザーの名前を更新します",
                 "consumes": [
                     "application/json"
                 ],
@@ -1241,7 +1459,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.UserResponse"
+                            "$ref": "#/definitions/response.ProfileResponse"
                         }
                     },
                     "400": {
@@ -1262,8 +1480,133 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "403": {
-                        "description": "Forbidden",
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/skills": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "ログイン中のユーザーのスキルレベル・bio・スキル一覧を返します",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "スキル・技術一覧取得",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.MySkillsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "スキルレベル・bio・スキル一覧を登録または上書き更新します。新規登録後のオンボーディング画面から呼び出します。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "スキル・技術登録（新規登録・更新）",
+                "parameters": [
+                    {
+                        "description": "スキル情報",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.UpsertSkillsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.MySkillsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1438,6 +1781,18 @@ const docTemplate = `{
                 }
             }
         },
+        "requests.JoinTeamRequest": {
+            "type": "object",
+            "required": [
+                "token"
+            ],
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "example": "a1b2c3d4e5f6..."
+                }
+            }
+        },
         "requests.LoginRequest": {
             "type": "object",
             "required": [
@@ -1475,6 +1830,24 @@ const docTemplate = `{
                     "type": "string",
                     "minLength": 8,
                     "example": "password123"
+                }
+            }
+        },
+        "requests.SkillInput": {
+            "type": "object",
+            "required": [
+                "skill_name"
+            ],
+            "properties": {
+                "experience_years": {
+                    "type": "number"
+                },
+                "is_learning_goal": {
+                    "type": "boolean"
+                },
+                "skill_name": {
+                    "type": "string",
+                    "maxLength": 30
                 }
             }
         },
@@ -1550,6 +1923,71 @@ const docTemplate = `{
                 }
             }
         },
+        "requests.UpsertSkillsRequest": {
+            "type": "object",
+            "required": [
+                "skill_level",
+                "skills"
+            ],
+            "properties": {
+                "bio": {
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "skill_level": {
+                    "type": "string",
+                    "enum": [
+                        "beginner",
+                        "intermediate",
+                        "advanced"
+                    ]
+                },
+                "skills": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/requests.SkillInput"
+                    }
+                }
+            }
+        },
+        "response.InviteTokenResponse": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "string",
+                    "example": "2024-01-08T00:00:00Z"
+                },
+                "invite_url": {
+                    "type": "string",
+                    "example": "/teams/join?token=a1b2c3..."
+                },
+                "team_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "a1b2c3d4e5f6789012345678901234567890123456789012345678901234"
+                }
+            }
+        },
+        "response.JoinTeamResponse": {
+            "type": "object",
+            "properties": {
+                "joined_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "team_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                }
+            }
+        },
         "response.LoginResponse": {
             "type": "object",
             "properties": {
@@ -1567,6 +2005,52 @@ const docTemplate = `{
                 },
                 "user": {
                     "$ref": "#/definitions/response.UserResponse"
+                }
+            }
+        },
+        "response.MySkillsResponse": {
+            "type": "object",
+            "properties": {
+                "bio": {
+                    "type": "string"
+                },
+                "skill_level": {
+                    "type": "string"
+                },
+                "skills": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.UserSkillResponse"
+                    }
+                }
+            }
+        },
+        "response.ProfileResponse": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "https://example.com/avatar.png"
+                },
+                "bio": {
+                    "type": "string",
+                    "example": "Goエンジニア"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "山田太郎"
+                },
+                "skill_level": {
+                    "type": "string",
+                    "example": "beginner"
                 }
             }
         },
@@ -1675,6 +2159,62 @@ const docTemplate = `{
                 }
             }
         },
+        "response.TeamMemberResponse": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "https://example.com/avatar.png"
+                },
+                "functional_role": {
+                    "type": "string",
+                    "example": "backend"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "joined_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "山田太郎"
+                },
+                "skill_level": {
+                    "type": "string",
+                    "example": "beginner"
+                },
+                "skills": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TeamMemberSkill"
+                    }
+                },
+                "team_role": {
+                    "type": "string",
+                    "example": "member"
+                }
+            }
+        },
+        "response.TeamMemberSkill": {
+            "type": "object",
+            "properties": {
+                "experience_years": {
+                    "type": "string",
+                    "example": "1.5"
+                },
+                "is_learning_goal": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "skill_name": {
+                    "type": "string",
+                    "example": "Go"
+                }
+            }
+        },
         "response.TeamResponse": {
             "type": "object",
             "properties": {
@@ -1730,6 +2270,23 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "山田太郎"
+                }
+            }
+        },
+        "response.UserSkillResponse": {
+            "type": "object",
+            "properties": {
+                "experience_years": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_learning_goal": {
+                    "type": "boolean"
+                },
+                "skill_name": {
+                    "type": "string"
                 }
             }
         }

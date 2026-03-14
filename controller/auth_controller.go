@@ -3,18 +3,21 @@ package controller
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/Piapuro/roadmap_api/requests"
 	"github.com/Piapuro/roadmap_api/service"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
 type AuthController struct {
 	authService *service.AuthService
+	userService *service.UserService
 }
 
-func NewAuthController(authService *service.AuthService) *AuthController {
-	return &AuthController{authService: authService}
+func NewAuthController(authService *service.AuthService, userService *service.UserService) *AuthController {
+	return &AuthController{authService: authService, userService: userService}
 }
 
 // SignUp godoc
@@ -32,10 +35,10 @@ func NewAuthController(authService *service.AuthService) *AuthController {
 func (c *AuthController) SignUp(ctx echo.Context) error {
 	var req requests.SignUpRequest
 	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(400, map[string]string{"error": err.Error()})
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 	if err := ctx.Validate(&req); err != nil {
-		return ctx.JSON(400, map[string]string{"error": err.Error()})
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 	res, err := c.authService.SignUp(ctx.Request().Context(), req.Email, req.Password, req.Name)
 	if err != nil {
@@ -44,13 +47,18 @@ func (c *AuthController) SignUp(ctx echo.Context) error {
 		}
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 	}
+	userID, err := uuid.Parse(res.User.ID)
+	if err != nil {
+		ctx.Logger().Errorf("SignUp: invalid user ID %q: %v", res.User.ID, err)
+	} else if err := c.userService.EnsureUserExists(ctx.Request().Context(), userID, req.Name, req.Email); err != nil {
+		ctx.Logger().Errorf("SignUp: EnsureUserExists failed for user %s: %v", userID, err)
+	}
 	return ctx.JSON(http.StatusCreated, res)
 }
 
-
 // Login godoc
 // @Summary      ログイン
-// @Description  [認証不要] メールアドレスとパスワードで認証し、JWTトークンを取得します（未実装）
+// @Description  メールアドレスとパスワードで認証し、JWTトークンを取得します
 // @Tags         auth
 // @Accept       json
 // @Produce      json
@@ -65,13 +73,28 @@ func (c *AuthController) Login(ctx echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
-	// TODO: implement
-	return ctx.JSON(http.StatusOK, nil)
+	if err := ctx.Validate(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+	res, err := c.authService.Login(ctx.Request().Context(), req.Email, req.Password)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidCredentials) {
+			return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid email or password"})
+		}
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	}
+	userID, err := uuid.Parse(res.User.ID)
+	if err != nil {
+		ctx.Logger().Errorf("Login: invalid user ID %q: %v", res.User.ID, err)
+	} else if err := c.userService.EnsureUserExists(ctx.Request().Context(), userID, res.User.Name, req.Email); err != nil {
+		ctx.Logger().Errorf("Login: EnsureUserExists failed for user %s: %v", userID, err)
+	}
+	return ctx.JSON(http.StatusOK, res)
 }
 
 // Logout godoc
 // @Summary      ログアウト
-// @Description  現在のセッションを無効化します（未実装）
+// @Description  現在のセッションを無効化します
 // @Tags         auth
 // @Produce      json
 // @Success      200  {object}  map[string]string
@@ -80,6 +103,11 @@ func (c *AuthController) Login(ctx echo.Context) error {
 // @Security     BearerAuth
 // @Router       /auth/logout [post]
 func (c *AuthController) Logout(ctx echo.Context) error {
-	// TODO: implement
-	return ctx.JSON(http.StatusOK, nil)
+	authHeader := ctx.Request().Header.Get("Authorization")
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+
+	if err := c.authService.Logout(ctx.Request().Context(), token); err != nil {
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	}
+	return ctx.JSON(http.StatusOK, map[string]string{"message": "logged out"})
 }

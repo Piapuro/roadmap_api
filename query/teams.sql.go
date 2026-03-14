@@ -7,6 +7,7 @@ package query
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -106,6 +107,203 @@ func (q *Queries) GetTeamByID(ctx context.Context, id uuid.UUID) (Team, error) {
 	return i, err
 }
 
+const getTeamByInviteToken = `-- name: GetTeamByInviteToken :one
+SELECT id, name, goal, level, start_date, end_date, is_archived, invite_token, invite_token_expires_at, created_by, created_at, updated_at FROM teams
+WHERE invite_token = $1
+`
+
+func (q *Queries) GetTeamByInviteToken(ctx context.Context, inviteToken sql.NullString) (Team, error) {
+	row := q.db.QueryRowContext(ctx, getTeamByInviteToken, inviteToken)
+	var i Team
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Goal,
+		&i.Level,
+		&i.StartDate,
+		&i.EndDate,
+		&i.IsArchived,
+		&i.InviteToken,
+		&i.InviteTokenExpiresAt,
+		&i.CreatedBy,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUserTeamRoleID = `-- name: GetUserTeamRoleID :one
+SELECT utr.team_role_id, tr.name AS team_role_name, tr.level AS team_role_level
+FROM user_team_roles utr
+JOIN team_roles tr ON tr.id = utr.team_role_id
+WHERE utr.user_id = $1 AND utr.team_id = $2
+`
+
+type GetUserTeamRoleIDParams struct {
+	UserID uuid.UUID
+	TeamID uuid.UUID
+}
+
+type GetUserTeamRoleIDRow struct {
+	TeamRoleID    int16
+	TeamRoleName  string
+	TeamRoleLevel int16
+}
+
+func (q *Queries) GetUserTeamRoleID(ctx context.Context, arg GetUserTeamRoleIDParams) (GetUserTeamRoleIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserTeamRoleID, arg.UserID, arg.TeamID)
+	var i GetUserTeamRoleIDRow
+	err := row.Scan(&i.TeamRoleID, &i.TeamRoleName, &i.TeamRoleLevel)
+	return i, err
+}
+
+const isTeamMember = `-- name: IsTeamMember :one
+SELECT EXISTS(
+    SELECT 1 FROM user_team_roles
+    WHERE user_id = $1 AND team_id = $2
+)
+`
+
+type IsTeamMemberParams struct {
+	UserID uuid.UUID
+	TeamID uuid.UUID
+}
+
+func (q *Queries) IsTeamMember(ctx context.Context, arg IsTeamMemberParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, isTeamMember, arg.UserID, arg.TeamID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const isTeamOwner = `-- name: IsTeamOwner :one
+SELECT EXISTS(
+    SELECT 1 FROM user_team_roles
+    WHERE user_id = $1 AND team_id = $2 AND team_role_id = 2
+)
+`
+
+type IsTeamOwnerParams struct {
+	UserID uuid.UUID
+	TeamID uuid.UUID
+}
+
+func (q *Queries) IsTeamOwner(ctx context.Context, arg IsTeamOwnerParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, isTeamOwner, arg.UserID, arg.TeamID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const issueInviteToken = `-- name: IssueInviteToken :one
+UPDATE teams
+SET invite_token = $2, invite_token_expires_at = $3, updated_at = NOW()
+WHERE id = $1
+RETURNING id, name, goal, level, start_date, end_date, is_archived, invite_token, invite_token_expires_at, created_by, created_at, updated_at
+`
+
+type IssueInviteTokenParams struct {
+	ID                   uuid.UUID
+	InviteToken          sql.NullString
+	InviteTokenExpiresAt sql.NullTime
+}
+
+func (q *Queries) IssueInviteToken(ctx context.Context, arg IssueInviteTokenParams) (Team, error) {
+	row := q.db.QueryRowContext(ctx, issueInviteToken, arg.ID, arg.InviteToken, arg.InviteTokenExpiresAt)
+	var i Team
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Goal,
+		&i.Level,
+		&i.StartDate,
+		&i.EndDate,
+		&i.IsArchived,
+		&i.InviteToken,
+		&i.InviteTokenExpiresAt,
+		&i.CreatedBy,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const joinTeamAsMember = `-- name: JoinTeamAsMember :exec
+INSERT INTO user_team_roles (user_id, team_id, team_role_id)
+VALUES ($1, $2, 1)
+ON CONFLICT DO NOTHING
+`
+
+type JoinTeamAsMemberParams struct {
+	UserID uuid.UUID
+	TeamID uuid.UUID
+}
+
+func (q *Queries) JoinTeamAsMember(ctx context.Context, arg JoinTeamAsMemberParams) error {
+	_, err := q.db.ExecContext(ctx, joinTeamAsMember, arg.UserID, arg.TeamID)
+	return err
+}
+
+const listTeamMembers = `-- name: ListTeamMembers :many
+SELECT
+    up.id,
+    up.name,
+    up.avatar_url,
+    up.skill_level,
+    utr.team_role_id,
+    tr.name AS team_role_name,
+    utr.functional_role,
+    utr.joined_at
+FROM user_team_roles utr
+JOIN user_profiles up ON up.id = utr.user_id
+JOIN team_roles tr ON tr.id = utr.team_role_id
+WHERE utr.team_id = $1
+ORDER BY utr.joined_at
+`
+
+type ListTeamMembersRow struct {
+	ID             uuid.UUID
+	Name           string
+	AvatarUrl      sql.NullString
+	SkillLevel     string
+	TeamRoleID     int16
+	TeamRoleName   string
+	FunctionalRole sql.NullString
+	JoinedAt       time.Time
+}
+
+func (q *Queries) ListTeamMembers(ctx context.Context, teamID uuid.UUID) ([]ListTeamMembersRow, error) {
+	rows, err := q.db.QueryContext(ctx, listTeamMembers, teamID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTeamMembersRow
+	for rows.Next() {
+		var i ListTeamMembersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.AvatarUrl,
+			&i.SkillLevel,
+			&i.TeamRoleID,
+			&i.TeamRoleName,
+			&i.FunctionalRole,
+			&i.JoinedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTeamsByCreatedBy = `-- name: ListTeamsByCreatedBy :many
 SELECT id, name, goal, level, start_date, end_date, is_archived, invite_token, invite_token_expires_at, created_by, created_at, updated_at FROM teams
 WHERE created_by = $1
@@ -113,6 +311,51 @@ WHERE created_by = $1
 
 func (q *Queries) ListTeamsByCreatedBy(ctx context.Context, createdBy uuid.UUID) ([]Team, error) {
 	rows, err := q.db.QueryContext(ctx, listTeamsByCreatedBy, createdBy)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Team
+	for rows.Next() {
+		var i Team
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Goal,
+			&i.Level,
+			&i.StartDate,
+			&i.EndDate,
+			&i.IsArchived,
+			&i.InviteToken,
+			&i.InviteTokenExpiresAt,
+			&i.CreatedBy,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTeamsByMember = `-- name: ListTeamsByMember :many
+SELECT t.id, t.name, t.goal, t.level, t.start_date, t.end_date, t.is_archived,
+       t.invite_token, t.invite_token_expires_at, t.created_by, t.created_at, t.updated_at
+FROM teams t
+JOIN user_team_roles utr ON utr.team_id = t.id
+WHERE utr.user_id = $1
+ORDER BY t.created_at DESC
+`
+
+func (q *Queries) ListTeamsByMember(ctx context.Context, userID uuid.UUID) ([]Team, error) {
+	rows, err := q.db.QueryContext(ctx, listTeamsByMember, userID)
 	if err != nil {
 		return nil, err
 	}

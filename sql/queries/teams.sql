@@ -11,6 +11,14 @@ WHERE id = $1;
 SELECT * FROM teams
 WHERE created_by = $1;
 
+-- name: ListTeamsByMember :many
+SELECT t.id, t.name, t.goal, t.level, t.start_date, t.end_date, t.is_archived,
+       t.invite_token, t.invite_token_expires_at, t.created_by, t.created_at, t.updated_at
+FROM teams t
+JOIN user_team_roles utr ON utr.team_id = t.id
+WHERE utr.user_id = $1
+ORDER BY t.created_at DESC;
+
 -- name: UpdateTeam :one
 UPDATE teams
 SET name = $2, updated_at = NOW()

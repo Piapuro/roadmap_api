@@ -243,18 +243,6 @@ type TechStack struct {
 	CreatedAt time.Time
 }
 
-type User struct {
-	ID           uuid.UUID
-	Email        string
-	Name         string
-	PasswordHash sql.NullString
-	AvatarUrl    sql.NullString
-	Bio          sql.NullString
-	SkillLevel   string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-}
-
 type UserGlobalRole struct {
 	UserID       uuid.UUID
 	GlobalRoleID int16
