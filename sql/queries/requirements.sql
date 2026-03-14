@@ -7,11 +7,10 @@ RETURNING *;
 SELECT * FROM requirements
 WHERE id = $1;
 
--- name: GetRequirementByTeamID :one
+-- name: ListRequirementsByTeamID :many
 SELECT * FROM requirements
 WHERE team_id = $1
-ORDER BY created_at DESC
-LIMIT 1;
+ORDER BY created_at DESC;
 
 -- name: UpdateRequirement :one
 UPDATE requirements

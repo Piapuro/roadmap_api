@@ -519,9 +519,24 @@ erDiagram
 | free_text | VARCHAR(1000) | NULL | 自由記述（補足） |
 | supplement_url | VARCHAR(500) | NULL | URL形式チェック |
 | status | ENUM | NOT NULL DEFAULT 'draft' | draft/locked |
-| created_by | UUID | FK → user_profiles NOT NULL | |
+| created_by | UUID | FK → user_profiles NOT NULL | migration 000004 で users→user_profiles に変更 |
 | created_at | TIMESTAMP | NOT NULL DEFAULT NOW() | |
 | updated_at | TIMESTAMP | NOT NULL DEFAULT NOW() | |
+
+> **マイグレーション注意（000004_add_requirements）**
+> 初期スキーマ（000001_init）では `created_by` が `users(id)` を参照していた。
+> Supabase Auth 連携では `user_profiles.id` を使用するため、migration 000004 で FK を `user_profiles(id)` に変更。
+> 本番DB（Supabase）では `supabase/migrations/20260314000004_add_requirements.sql` を適用済みであること。
+
+**要件定義 API ルーティング**
+
+| メソッド | パス | 説明 | 認可 |
+|---------|------|------|------|
+| POST | `/teams/:id/requirements` | 要件定義作成 | チームメンバー以上 |
+| GET | `/teams/:id/requirements` | チームの要件定義一覧 | チームメンバー以上 |
+| GET | `/requirements/:id` | 要件定義詳細取得 | JWT認証のみ |
+| PUT | `/requirements/:id` | 要件定義更新（draft のみ） | JWT認証のみ |
+| POST | `/requirements/:id/submit` | 要件定義を locked に確定 | JWT認証のみ |
 
 ---
 

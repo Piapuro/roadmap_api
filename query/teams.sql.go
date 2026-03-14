@@ -133,7 +133,7 @@ func (q *Queries) GetTeamByInviteToken(ctx context.Context, inviteToken sql.Null
 }
 
 const getUserTeamRoleID = `-- name: GetUserTeamRoleID :one
-SELECT utr.team_role_id, tr.name AS team_role_name, tr.level AS team_role_level
+SELECT tr.level AS team_role_level, tr.name AS team_role_name
 FROM user_team_roles utr
 JOIN team_roles tr ON tr.id = utr.team_role_id
 WHERE utr.user_id = $1 AND utr.team_id = $2
@@ -145,23 +145,22 @@ type GetUserTeamRoleIDParams struct {
 }
 
 type GetUserTeamRoleIDRow struct {
-	TeamRoleID    int16
-	TeamRoleName  string
 	TeamRoleLevel int16
+	TeamRoleName  string
 }
 
 func (q *Queries) GetUserTeamRoleID(ctx context.Context, arg GetUserTeamRoleIDParams) (GetUserTeamRoleIDRow, error) {
 	row := q.db.QueryRowContext(ctx, getUserTeamRoleID, arg.UserID, arg.TeamID)
 	var i GetUserTeamRoleIDRow
-	err := row.Scan(&i.TeamRoleID, &i.TeamRoleName, &i.TeamRoleLevel)
+	err := row.Scan(&i.TeamRoleLevel, &i.TeamRoleName)
 	return i, err
 }
 
 const isTeamMember = `-- name: IsTeamMember :one
-SELECT EXISTS(
+SELECT EXISTS (
     SELECT 1 FROM user_team_roles
     WHERE user_id = $1 AND team_id = $2
-)
+) AS is_member
 `
 
 type IsTeamMemberParams struct {
@@ -171,16 +170,17 @@ type IsTeamMemberParams struct {
 
 func (q *Queries) IsTeamMember(ctx context.Context, arg IsTeamMemberParams) (bool, error) {
 	row := q.db.QueryRowContext(ctx, isTeamMember, arg.UserID, arg.TeamID)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
+	var is_member bool
+	err := row.Scan(&is_member)
+	return is_member, err
 }
 
 const isTeamOwner = `-- name: IsTeamOwner :one
-SELECT EXISTS(
-    SELECT 1 FROM user_team_roles
-    WHERE user_id = $1 AND team_id = $2 AND team_role_id = 2
-)
+SELECT EXISTS (
+    SELECT 1 FROM user_team_roles utr
+    JOIN team_roles tr ON tr.id = utr.team_role_id
+    WHERE utr.user_id = $1 AND utr.team_id = $2 AND tr.level >= 20
+) AS is_owner
 `
 
 type IsTeamOwnerParams struct {
@@ -190,9 +190,9 @@ type IsTeamOwnerParams struct {
 
 func (q *Queries) IsTeamOwner(ctx context.Context, arg IsTeamOwnerParams) (bool, error) {
 	row := q.db.QueryRowContext(ctx, isTeamOwner, arg.UserID, arg.TeamID)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
+	var is_owner bool
+	err := row.Scan(&is_owner)
+	return is_owner, err
 }
 
 const issueInviteToken = `-- name: IssueInviteToken :one
@@ -231,7 +231,7 @@ func (q *Queries) IssueInviteToken(ctx context.Context, arg IssueInviteTokenPara
 const joinTeamAsMember = `-- name: JoinTeamAsMember :exec
 INSERT INTO user_team_roles (user_id, team_id, team_role_id)
 VALUES ($1, $2, 1)
-ON CONFLICT DO NOTHING
+ON CONFLICT (user_id, team_id) DO NOTHING
 `
 
 type JoinTeamAsMemberParams struct {
@@ -245,15 +245,8 @@ func (q *Queries) JoinTeamAsMember(ctx context.Context, arg JoinTeamAsMemberPara
 }
 
 const listTeamMembers = `-- name: ListTeamMembers :many
-SELECT
-    up.id,
-    up.name,
-    up.avatar_url,
-    up.skill_level,
-    utr.team_role_id,
-    tr.name AS team_role_name,
-    utr.functional_role,
-    utr.joined_at
+SELECT up.id, up.name, up.avatar_url, up.skill_level,
+       tr.name AS team_role_name, utr.joined_at, utr.functional_role
 FROM user_team_roles utr
 JOIN user_profiles up ON up.id = utr.user_id
 JOIN team_roles tr ON tr.id = utr.team_role_id
@@ -266,10 +259,9 @@ type ListTeamMembersRow struct {
 	Name           string
 	AvatarUrl      sql.NullString
 	SkillLevel     string
-	TeamRoleID     int16
 	TeamRoleName   string
-	FunctionalRole sql.NullString
 	JoinedAt       time.Time
+	FunctionalRole sql.NullString
 }
 
 func (q *Queries) ListTeamMembers(ctx context.Context, teamID uuid.UUID) ([]ListTeamMembersRow, error) {
@@ -286,10 +278,9 @@ func (q *Queries) ListTeamMembers(ctx context.Context, teamID uuid.UUID) ([]List
 			&i.Name,
 			&i.AvatarUrl,
 			&i.SkillLevel,
-			&i.TeamRoleID,
 			&i.TeamRoleName,
-			&i.FunctionalRole,
 			&i.JoinedAt,
+			&i.FunctionalRole,
 		); err != nil {
 			return nil, err
 		}

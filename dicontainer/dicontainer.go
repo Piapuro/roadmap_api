@@ -107,7 +107,7 @@ func New() (*Container, error) {
 	// Routes
 	router.RegisterAuthRoutes(e, authController, auth)
 	router.RegisterUserRoutes(e, userController, auth)
-	router.RegisterTeamRoutes(e, teamController, auth, teamScopeAuth)
+	router.RegisterTeamRoutes(e, teamController, requirementController, auth, teamScopeAuth)
 	router.RegisterRequirementRoutes(e, requirementController, auth)
 	router.RegisterRoadmapRoutes(e, roadmapController, auth)
 	router.RegisterWebhookRoutes(e, webhookController)
