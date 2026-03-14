@@ -237,15 +237,6 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -298,15 +289,6 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -333,7 +315,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "指定IDの要件定義を更新します",
+                "description": "指定IDの要件定義を更新します（draft 状態のみ）",
                 "consumes": [
                     "application/json"
                 ],
@@ -387,17 +369,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -424,14 +397,14 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "要件定義のステータスを draft から submitted へ遷移させます",
+                "description": "要件定義のステータスを draft から locked へ遷移させます",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "requirements"
                 ],
-                "summary": "要件定義を提出",
+                "summary": "要件定義を確定（ロック）",
                 "parameters": [
                     {
                         "type": "string",
@@ -457,15 +430,6 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -476,7 +440,7 @@ const docTemplate = `{
                         }
                     },
                     "409": {
-                        "description": "すでに提出済みの場合",
+                        "description": "Conflict",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1723,21 +1687,28 @@ const docTemplate = `{
                     "example": "550e8400-e29b-41d4-a716-446655440001"
                 },
                 "end_date": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2024-06-30T00:00:00Z"
                 },
                 "goal": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "バックエンド開発力向上"
                 },
                 "id": {
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "level": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "intermediate"
                 },
                 "name": {
                     "type": "string",
                     "example": "Aチーム"
+                },
+                "start_date": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
                 }
             }
         },
