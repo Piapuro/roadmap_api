@@ -1,6 +1,7 @@
 package dicontainer
 
 import (
+	"context"
 	"os"
 	"strings"
 
@@ -50,20 +51,25 @@ func New() (*Container, error) {
 	// sqlc queries
 	q := query.New(db)
 
+	// Gemini client
+	geminiClient, err := driver.NewGeminiClient(context.Background(), cfg.GeminiAPIKey)
+	if err != nil {
+		return nil, err
+	}
+
 	// Adapters
 	userAdapter := adapter.NewUserAdapter(q, db)
 	teamAdapter := adapter.NewTeamAdapter(q)
 	requirementAdapter := adapter.NewRequirementAdapter(q, db)
 	webhookAdapter := adapter.NewWebhookAdapter(db)
-	aiAdapter := adapter.NewAIAdapter()
+	aiAdapter := adapter.NewAIAdapter(geminiClient)
 
 	// Services
 	authService := service.NewAuthService(supabaseCfg.URL, supabaseCfg.AnonKey, nil)
 	userService := service.NewUserService(userAdapter)
 	teamService := service.NewTeamService(teamAdapter)
 	requirementService := service.NewRequirementService(requirementAdapter)
-	// TODO: inject aiService into a controller once the AI feature is implemented
-	roadmapService := service.NewRoadmapService(aiAdapter)
+	roadmapService := service.NewRoadmapService(aiAdapter, requirementAdapter)
 
 	// Controllers
 	authController := controller.NewAuthController(authService, userService)
@@ -108,7 +114,7 @@ func New() (*Container, error) {
 	router.RegisterAuthRoutes(e, authController, auth)
 	router.RegisterUserRoutes(e, userController, auth)
 	router.RegisterTeamRoutes(e, teamController, requirementController, auth, teamScopeAuth)
-	router.RegisterRequirementRoutes(e, requirementController, auth)
+	router.RegisterRequirementRoutes(e, requirementController, roadmapController, auth)
 	router.RegisterRoadmapRoutes(e, roadmapController, auth)
 	router.RegisterWebhookRoutes(e, webhookController)
 	router.RegisterSkillRoutes(e, skillController)

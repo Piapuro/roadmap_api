@@ -1,6 +1,10 @@
 package service
 
-import "github.com/Piapuro/roadmap_api/adapter"
+import (
+	"context"
+
+	"github.com/Piapuro/roadmap_api/adapter"
+)
 
 // AIService handles business logic for AI-related features using Gemini.
 type AIService struct {
@@ -12,7 +16,7 @@ func NewAIService(aiAdapter *adapter.AIAdapter) *AIService {
 }
 
 // GenerateRoadmap sends a prompt to Gemini and returns the generated roadmap content.
-func (s *AIService) GenerateRoadmap(prompt string) (string, error) {
+func (s *AIService) GenerateRoadmap(ctx context.Context, prompt string) (string, error) {
 	// TODO: implement
-	return s.aiAdapter.Generate(prompt)
+	return s.aiAdapter.Generate(ctx, prompt)
 }
