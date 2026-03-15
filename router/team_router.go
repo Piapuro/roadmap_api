@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func RegisterTeamRoutes(e *echo.Echo, c *controller.TeamController, m *middleware.SupabaseAuth, ts *middleware.TeamScopeAuth) {
+func RegisterTeamRoutes(e *echo.Echo, c *controller.TeamController, rc *controller.RequirementController, m *middleware.SupabaseAuth, ts *middleware.TeamScopeAuth) {
 	g := e.Group("/teams", m.Verify)
 
 	// 認証済みユーザーであれば誰でもアクセス可能
@@ -17,6 +17,8 @@ func RegisterTeamRoutes(e *echo.Echo, c *controller.TeamController, m *middlewar
 	// チームメンバー以上が必要
 	g.GET("/:id", c.GetTeam, ts.RequireMember())
 	g.GET("/:id/members", c.GetTeamMembers, ts.RequireMember())
+	g.GET("/:id/requirements", rc.ListRequirements, ts.RequireMember())
+	g.POST("/:id/requirements", rc.CreateRequirement, ts.RequireMember())
 
 	// チームオーナーのみ
 	g.PUT("/:id", c.UpdateTeam, ts.RequireOwner())

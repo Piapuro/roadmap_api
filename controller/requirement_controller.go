@@ -19,20 +19,51 @@ func NewRequirementController(requirementService *service.RequirementService) *R
 	return &RequirementController{requirementService: requirementService}
 }
 
+// ListRequirements godoc
+// @Summary      チームの要件定義一覧取得
+// @Description  指定チームに属する要件定義の一覧を返します
+// @Tags         requirements
+// @Produce      json
+// @Param        id   path      string  true  "チームID (UUID)"
+// @Success      200  {array}   response.RequirementResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /teams/{id}/requirements [get]
+func (c *RequirementController) ListRequirements(ctx echo.Context) error {
+	teamID, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "invalid team id"})
+	}
+
+	resp, err := c.requirementService.GetTeamRequirements(ctx.Request().Context(), teamID)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	}
+	return ctx.JSON(http.StatusOK, resp)
+}
+
 // CreateRequirement godoc
 // @Summary      要件定義作成
-// @Description  新しい要件定義を作成します
+// @Description  チームに新しい要件定義を作成します
 // @Tags         requirements
 // @Accept       json
 // @Produce      json
+// @Param        id    path      string                             true  "チームID (UUID)"
 // @Param        body  body      requests.CreateRequirementRequest  true  "要件定義情報"
 // @Success      201   {object}  response.RequirementResponse
 // @Failure      400   {object}  map[string]string
 // @Failure      401   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Security     BearerAuth
-// @Router       /requirements [post]
+// @Router       /teams/{id}/requirements [post]
 func (c *RequirementController) CreateRequirement(ctx echo.Context) error {
+	teamID, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "invalid team id"})
+	}
+
 	var req requests.CreateRequirementRequest
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
@@ -50,7 +81,7 @@ func (c *RequirementController) CreateRequirement(ctx echo.Context) error {
 		return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid user id"})
 	}
 
-	resp, err := c.requirementService.CreateRequirement(ctx.Request().Context(), userID, req)
+	resp, err := c.requirementService.CreateRequirement(ctx.Request().Context(), userID, teamID, req)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 	}
@@ -116,6 +147,9 @@ func (c *RequirementController) UpdateRequirement(ctx echo.Context) error {
 
 	resp, err := c.requirementService.UpdateRequirement(ctx.Request().Context(), id, req)
 	if err != nil {
+		if errors.Is(err, service.ErrRequirementNotFound) {
+			return ctx.JSON(http.StatusNotFound, map[string]string{"error": "requirement not found"})
+		}
 		if errors.Is(err, service.ErrRequirementLocked) {
 			return ctx.JSON(http.StatusConflict, map[string]string{"error": "requirement is locked and cannot be updated"})
 		}
@@ -145,6 +179,9 @@ func (c *RequirementController) SubmitRequirement(ctx echo.Context) error {
 
 	resp, err := c.requirementService.LockRequirement(ctx.Request().Context(), id)
 	if err != nil {
+		if errors.Is(err, service.ErrRequirementNotFound) {
+			return ctx.JSON(http.StatusNotFound, map[string]string{"error": "requirement not found"})
+		}
 		if errors.Is(err, service.ErrRequirementLocked) {
 			return ctx.JSON(http.StatusConflict, map[string]string{"error": "requirement is already locked"})
 		}

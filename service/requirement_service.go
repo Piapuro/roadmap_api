@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/Piapuro/roadmap_api/adapter"
 	"github.com/Piapuro/roadmap_api/query"
@@ -26,12 +25,7 @@ func NewRequirementService(requirementAdapter *adapter.RequirementAdapter) *Requ
 	return &RequirementService{requirementAdapter: requirementAdapter}
 }
 
-func (s *RequirementService) CreateRequirement(ctx context.Context, userID uuid.UUID, req requests.CreateRequirementRequest) (response.RequirementResponse, error) {
-	teamID, err := uuid.Parse(req.TeamID)
-	if err != nil {
-		return response.RequirementResponse{}, fmt.Errorf("invalid team_id: %w", err)
-	}
-
+func (s *RequirementService) CreateRequirement(ctx context.Context, userID uuid.UUID, teamID uuid.UUID, req requests.CreateRequirementRequest) (response.RequirementResponse, error) {
 	req2, features, err := s.requirementAdapter.CreateRequirement(ctx, adapter.RequirementInput{
 		TeamID:          teamID,
 		ProductType:     req.ProductType,
@@ -47,6 +41,18 @@ func (s *RequirementService) CreateRequirement(ctx context.Context, userID uuid.
 	return toRequirementResponse(req2, features), nil
 }
 
+func (s *RequirementService) GetTeamRequirements(ctx context.Context, teamID uuid.UUID) ([]response.RequirementResponse, error) {
+	reqs, err := s.requirementAdapter.ListRequirementsByTeamID(ctx, teamID)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]response.RequirementResponse, 0, len(reqs))
+	for _, r := range reqs {
+		result = append(result, toRequirementResponse(r, nil))
+	}
+	return result, nil
+}
+
 func (s *RequirementService) GetRequirement(ctx context.Context, id uuid.UUID) (response.RequirementResponse, error) {
 	req, features, err := s.requirementAdapter.GetRequirement(ctx, id)
 	if err != nil {
@@ -59,6 +65,18 @@ func (s *RequirementService) GetRequirement(ctx context.Context, id uuid.UUID) (
 }
 
 func (s *RequirementService) UpdateRequirement(ctx context.Context, id uuid.UUID, req requests.UpdateRequirementRequest) (response.RequirementResponse, error) {
+	// まず存在確認し、NotFound と Locked を区別する
+	existing, _, err := s.requirementAdapter.GetRequirement(ctx, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return response.RequirementResponse{}, ErrRequirementNotFound
+		}
+		return response.RequirementResponse{}, err
+	}
+	if existing.Status == "locked" {
+		return response.RequirementResponse{}, ErrRequirementLocked
+	}
+
 	updated, features, err := s.requirementAdapter.UpdateRequirement(ctx, id, adapter.RequirementUpdateInput{
 		ProductType:     req.ProductType,
 		DifficultyLevel: int16(req.DifficultyLevel),
@@ -67,20 +85,26 @@ func (s *RequirementService) UpdateRequirement(ctx context.Context, id uuid.UUID
 		Features:        req.Features,
 	})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return response.RequirementResponse{}, ErrRequirementLocked
-		}
 		return response.RequirementResponse{}, err
 	}
 	return toRequirementResponse(updated, features), nil
 }
 
 func (s *RequirementService) LockRequirement(ctx context.Context, id uuid.UUID) (response.RequirementResponse, error) {
-	locked, features, err := s.requirementAdapter.LockRequirement(ctx, id)
+	// まず存在確認し、NotFound と Locked を区別する
+	existing, _, err := s.requirementAdapter.GetRequirement(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return response.RequirementResponse{}, ErrRequirementLocked
+			return response.RequirementResponse{}, ErrRequirementNotFound
 		}
+		return response.RequirementResponse{}, err
+	}
+	if existing.Status == "locked" {
+		return response.RequirementResponse{}, ErrRequirementLocked
+	}
+
+	locked, features, err := s.requirementAdapter.LockRequirement(ctx, id)
+	if err != nil {
 		return response.RequirementResponse{}, err
 	}
 	return toRequirementResponse(locked, features), nil

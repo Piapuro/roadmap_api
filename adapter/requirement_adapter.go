@@ -74,6 +74,15 @@ func (a *RequirementAdapter) GetRequirement(ctx context.Context, id uuid.UUID) (
 	return req, features, nil
 }
 
+// ListRequirementsByTeamID はチームに属する要件定義一覧を返す。
+func (a *RequirementAdapter) ListRequirementsByTeamID(ctx context.Context, teamID uuid.UUID) ([]query.Requirement, error) {
+	reqs, err := a.q.ListRequirementsByTeamID(ctx, teamID)
+	if err != nil {
+		return nil, fmt.Errorf("list requirements by team: %w", err)
+	}
+	return reqs, nil
+}
+
 type RequirementUpdateInput struct {
 	ProductType     string
 	DifficultyLevel int16

@@ -108,31 +108,6 @@ func (q *Queries) GetRequirementByID(ctx context.Context, id uuid.UUID) (Require
 	return i, err
 }
 
-const getRequirementByTeamID = `-- name: GetRequirementByTeamID :one
-SELECT id, team_id, product_type, difficulty_level, free_text, supplement_url, status, created_by, created_at, updated_at FROM requirements
-WHERE team_id = $1
-ORDER BY created_at DESC
-LIMIT 1
-`
-
-func (q *Queries) GetRequirementByTeamID(ctx context.Context, teamID uuid.UUID) (Requirement, error) {
-	row := q.db.QueryRowContext(ctx, getRequirementByTeamID, teamID)
-	var i Requirement
-	err := row.Scan(
-		&i.ID,
-		&i.TeamID,
-		&i.ProductType,
-		&i.DifficultyLevel,
-		&i.FreeText,
-		&i.SupplementUrl,
-		&i.Status,
-		&i.CreatedBy,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const listRequirementFeatures = `-- name: ListRequirementFeatures :many
 SELECT id, requirement_id, feature_name, is_required FROM requirement_features
 WHERE requirement_id = $1
@@ -153,6 +128,46 @@ func (q *Queries) ListRequirementFeatures(ctx context.Context, requirementID uui
 			&i.RequirementID,
 			&i.FeatureName,
 			&i.IsRequired,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRequirementsByTeamID = `-- name: ListRequirementsByTeamID :many
+SELECT id, team_id, product_type, difficulty_level, free_text, supplement_url, status, created_by, created_at, updated_at FROM requirements
+WHERE team_id = $1
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListRequirementsByTeamID(ctx context.Context, teamID uuid.UUID) ([]Requirement, error) {
+	rows, err := q.db.QueryContext(ctx, listRequirementsByTeamID, teamID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Requirement
+	for rows.Next() {
+		var i Requirement
+		if err := rows.Scan(
+			&i.ID,
+			&i.TeamID,
+			&i.ProductType,
+			&i.DifficultyLevel,
+			&i.FreeText,
+			&i.SupplementUrl,
+			&i.Status,
+			&i.CreatedBy,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
