@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/Piapuro/roadmap_api/requests"
 	"github.com/Piapuro/roadmap_api/service"
@@ -113,4 +115,33 @@ func (c *RoadmapController) UpdateRoadmap(ctx echo.Context) error {
 func (c *RoadmapController) DeleteRoadmap(ctx echo.Context) error {
 	// TODO: implement
 	return ctx.NoContent(http.StatusNoContent)
+}
+
+// SuggestMVP godoc
+// @Summary      MVP範囲の自動提案
+// @Description  要件定義データをもとにAIがMVP（最小実行可能製品）の機能リストを提案します
+// @Tags         requirements
+// @Produce      json
+// @Param        id   path      string  true  "要件定義ID (UUID)"
+// @Success      200  {object}  response.MVPSuggestionResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /requirements/{id}/suggest-mvp [post]
+func (c *RoadmapController) SuggestMVP(ctx echo.Context) error {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "invalid requirement id"})
+	}
+
+	result, err := c.roadmapService.SuggestMVP(ctx.Request().Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrRequirementNotFound) {
+			return ctx.JSON(http.StatusNotFound, map[string]string{"error": "requirement not found"})
+		}
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	}
+	return ctx.JSON(http.StatusOK, result)
 }
