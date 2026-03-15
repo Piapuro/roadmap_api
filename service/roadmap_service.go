@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -31,6 +32,9 @@ func NewRoadmapService(aiAdapter *adapter.AIAdapter, requirementAdapter *adapter
 func (s *RoadmapService) SuggestMVP(ctx context.Context, requirementID uuid.UUID) (response.MVPSuggestionResponse, error) {
 	req, features, err := s.requirementAdapter.GetRequirement(ctx, requirementID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return response.MVPSuggestionResponse{}, ErrRequirementNotFound
+		}
 		return response.MVPSuggestionResponse{}, fmt.Errorf("get requirement: %w", err)
 	}
 
@@ -38,7 +42,7 @@ func (s *RoadmapService) SuggestMVP(ctx context.Context, requirementID uuid.UUID
 
 	raw, err := s.aiAdapter.Generate(ctx, prompt)
 	if err != nil {
-		return response.MVPSuggestionResponse{}, fmt.Errorf("%w: %v", ErrMVPSuggestionFailed, err)
+		return response.MVPSuggestionResponse{}, fmt.Errorf("%w: %w", ErrMVPSuggestionFailed, err)
 	}
 
 	return parseMVPResponse(raw)
@@ -49,13 +53,21 @@ func buildMVPPrompt(req query.Requirement, features []query.RequirementFeature) 
 	for _, f := range features {
 		featureList = append(featureList, "- "+f.FeatureName)
 	}
+	featuresText := strings.Join(featureList, "\n")
+	if featuresText == "" {
+		featuresText = "（機能リストなし）"
+	}
 
-	freeText := ""
-	if req.FreeText.Valid {
+	freeText := "（未入力）"
+	if req.FreeText.Valid && req.FreeText.String != "" {
 		freeText = req.FreeText.String
 	}
 
-	difficultyLabel := map[int16]string{1: "初級", 2: "中級", 3: "上級"}[req.DifficultyLevel]
+	difficultyLabelMap := map[int16]string{1: "初級", 2: "中級", 3: "上級"}
+	difficultyLabel, ok := difficultyLabelMap[req.DifficultyLevel]
+	if !ok {
+		difficultyLabel = fmt.Sprintf("レベル%d", req.DifficultyLevel)
+	}
 
 	return fmt.Sprintf(`あなたはソフトウェアプロジェクトのMVP（最小実行可能製品）設計の専門家です。
 以下の要件定義からMVP（最初に開発すべき最小限の機能）を提案してください。
@@ -74,18 +86,20 @@ func buildMVPPrompt(req query.Requirement, features []query.RequirementFeature) 
 		req.ProductType,
 		difficultyLabel,
 		freeText,
-		strings.Join(featureList, "\n"),
+		featuresText,
 	)
 }
 
-// parseMVPResponse はGeminiの応答テキストからJSONを抽出してパースする。
+// parseMVPResponse はGeminiの応答テキストからJSONオブジェクトを抽出してパースする。
+// コードブロック (```json...```) や余分なテキストが含まれていても動作する。
 func parseMVPResponse(raw string) (response.MVPSuggestionResponse, error) {
-	// コードブロック (```json ... ```) を除去
-	raw = strings.TrimSpace(raw)
-	raw = strings.TrimPrefix(raw, "```json")
-	raw = strings.TrimPrefix(raw, "```")
-	raw = strings.TrimSuffix(raw, "```")
-	raw = strings.TrimSpace(raw)
+	// 最初の { から最後の } までを抽出してパース
+	start := strings.Index(raw, "{")
+	end := strings.LastIndex(raw, "}")
+	if start == -1 || end == -1 || end < start {
+		return response.MVPSuggestionResponse{}, fmt.Errorf("%w: no JSON object found in AI response", ErrMVPSuggestionFailed)
+	}
+	raw = raw[start : end+1]
 
 	var result response.MVPSuggestionResponse
 	if err := json.Unmarshal([]byte(raw), &result); err != nil {
