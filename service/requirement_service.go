@@ -15,6 +15,7 @@ import (
 var (
 	ErrRequirementNotFound = errors.New("requirement not found")
 	ErrRequirementLocked   = errors.New("requirement is already locked")
+	ErrRoadmapConfirmed    = errors.New("roadmap is confirmed, requirement cannot be edited")
 )
 
 type RequirementService struct {
@@ -76,6 +77,14 @@ func (s *RequirementService) UpdateRequirement(ctx context.Context, id uuid.UUID
 	if existing.Status == "locked" {
 		return response.RequirementResponse{}, ErrRequirementLocked
 	}
+	// ロードマップが確定済みの場合は編集不可
+	confirmed, err := s.requirementAdapter.HasConfirmedRoadmap(ctx, existing.TeamID)
+	if err != nil {
+		return response.RequirementResponse{}, err
+	}
+	if confirmed {
+		return response.RequirementResponse{}, ErrRoadmapConfirmed
+	}
 
 	updated, features, err := s.requirementAdapter.UpdateRequirement(ctx, id, adapter.RequirementUpdateInput{
 		ProductType:     req.ProductType,
@@ -101,6 +110,14 @@ func (s *RequirementService) LockRequirement(ctx context.Context, id uuid.UUID) 
 	}
 	if existing.Status == "locked" {
 		return response.RequirementResponse{}, ErrRequirementLocked
+	}
+	// ロードマップが確定済みの場合は編集不可
+	confirmed, err := s.requirementAdapter.HasConfirmedRoadmap(ctx, existing.TeamID)
+	if err != nil {
+		return response.RequirementResponse{}, err
+	}
+	if confirmed {
+		return response.RequirementResponse{}, ErrRoadmapConfirmed
 	}
 
 	locked, features, err := s.requirementAdapter.LockRequirement(ctx, id)
