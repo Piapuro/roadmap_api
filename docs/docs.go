@@ -249,7 +249,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "指定IDの要件定義を更新します（draft 状態のみ）",
+                "description": "指定IDの要件定義を更新します（draft 状態かつロードマップ未確定の場合のみ）",
                 "consumes": [
                     "application/json"
                 ],
@@ -303,6 +303,24 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "409": {
                         "description": "Conflict",
                         "schema": {
@@ -331,7 +349,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "要件定義のステータスを draft から locked へ遷移させます",
+                "description": "要件定義のステータスを draft から locked へ遷移させます（ロードマップ未確定の場合のみ）",
                 "produces": [
                     "application/json"
                 ],
@@ -357,6 +375,15 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {

@@ -118,7 +118,7 @@ func (c *RequirementController) GetRequirement(ctx echo.Context) error {
 
 // UpdateRequirement godoc
 // @Summary      要件定義更新
-// @Description  指定IDの要件定義を更新します（draft 状態のみ）
+// @Description  指定IDの要件定義を更新します（draft 状態かつロードマップ未確定の場合のみ）
 // @Tags         requirements
 // @Accept       json
 // @Produce      json
@@ -127,6 +127,8 @@ func (c *RequirementController) GetRequirement(ctx echo.Context) error {
 // @Success      200   {object}  response.RequirementResponse
 // @Failure      400   {object}  map[string]string
 // @Failure      401   {object}  map[string]string
+// @Failure      403   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
 // @Failure      409   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Security     BearerAuth
@@ -153,6 +155,9 @@ func (c *RequirementController) UpdateRequirement(ctx echo.Context) error {
 		if errors.Is(err, service.ErrRequirementLocked) {
 			return ctx.JSON(http.StatusConflict, map[string]string{"error": "requirement is locked and cannot be updated"})
 		}
+		if errors.Is(err, service.ErrRoadmapConfirmed) {
+			return ctx.JSON(http.StatusForbidden, map[string]string{"error": "roadmap is confirmed, requirement cannot be edited"})
+		}
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 	}
 	return ctx.JSON(http.StatusOK, resp)
@@ -160,12 +165,13 @@ func (c *RequirementController) UpdateRequirement(ctx echo.Context) error {
 
 // SubmitRequirement godoc
 // @Summary      要件定義を確定（ロック）
-// @Description  要件定義のステータスを draft から locked へ遷移させます
+// @Description  要件定義のステータスを draft から locked へ遷移させます（ロードマップ未確定の場合のみ）
 // @Tags         requirements
 // @Produce      json
 // @Param        id   path      string  true  "要件定義ID (UUID)"
 // @Success      200  {object}  response.RequirementResponse
 // @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
 // @Failure      409  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
@@ -184,6 +190,9 @@ func (c *RequirementController) SubmitRequirement(ctx echo.Context) error {
 		}
 		if errors.Is(err, service.ErrRequirementLocked) {
 			return ctx.JSON(http.StatusConflict, map[string]string{"error": "requirement is already locked"})
+		}
+		if errors.Is(err, service.ErrRoadmapConfirmed) {
+			return ctx.JSON(http.StatusForbidden, map[string]string{"error": "roadmap is confirmed, requirement cannot be edited"})
 		}
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 	}

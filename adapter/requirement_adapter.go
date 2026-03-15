@@ -61,6 +61,11 @@ func (a *RequirementAdapter) CreateRequirement(ctx context.Context, in Requireme
 	return req, features, nil
 }
 
+// HasConfirmedRoadmap は requirement が属するチームに confirmed なロードマップがあるか返す。
+func (a *RequirementAdapter) HasConfirmedRoadmap(ctx context.Context, teamID uuid.UUID) (bool, error) {
+	return a.q.HasConfirmedRoadmapForTeam(ctx, teamID)
+}
+
 // GetRequirement は requirement と関連する features を取得する。
 func (a *RequirementAdapter) GetRequirement(ctx context.Context, id uuid.UUID) (query.Requirement, []query.RequirementFeature, error) {
 	req, err := a.q.GetRequirementByID(ctx, id)

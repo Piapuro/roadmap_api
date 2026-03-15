@@ -589,7 +589,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: 指定IDの要件定義を更新します（draft 状態のみ）
+      description: 指定IDの要件定義を更新します（draft 状態かつロードマップ未確定の場合のみ）
       parameters:
       - description: 要件定義ID (UUID)
         in: path
@@ -621,6 +621,18 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "409":
           description: Conflict
           schema:
@@ -640,7 +652,7 @@ paths:
       - requirements
   /requirements/{id}/submit:
     post:
-      description: 要件定義のステータスを draft から locked へ遷移させます
+      description: 要件定義のステータスを draft から locked へ遷移させます（ロードマップ未確定の場合のみ）
       parameters:
       - description: 要件定義ID (UUID)
         in: path
@@ -656,6 +668,12 @@ paths:
             $ref: '#/definitions/response.RequirementResponse'
         "401":
           description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
           schema:
             additionalProperties:
               type: string
